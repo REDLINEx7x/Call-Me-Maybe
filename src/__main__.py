@@ -5,6 +5,7 @@ from .utils import load_functions, load_prompts
 
 def main():
 
+    all_answers = []
     parser = argparse.ArgumentParser()
     parser.add_argument("--functions_definition", type=str, default="data/input/functions_definition.json")
     parser.add_argument("--input", type=str, default="data/input/function_calling_tests.json")
@@ -12,12 +13,15 @@ def main():
     args = parser.parse_args()
 
     try:
+        validated_prompts = load_prompts(args.input)
         validated_functions = load_functions(args.functions_definition)
-        validated_prompts = load_functions(args.input)
+
         if not validated_functions or not validated_prompts:
             return
     except Exception as e:
         print(f"")
 
+    for p in validated_prompts:
+        print(p)
 
 main()
