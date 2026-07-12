@@ -37,10 +37,17 @@ class JSONStateMachine(BaseModel):
     seen_keys: List[str] = Field(default_factory=list)
     buffer: str = ""
 
-    def update(token):
+    def update(next_token: str):
 
-        self.buffer += token:
-        
+        self.buffer.append += next_token
+        if self.current_state.START:
+            if '{' in next_token:
+                self.current_state = "{EXPECT_KEY"
+                i = next_token.index("{")
+                self.buffer = next_token[i + 1:]
+        elif self.current_state.EXPECT_KEY:
+            pass
+
 
     @classmethod
     def from_schema(cls, schema_dict: Dict[str, Any]) -> "JSONStateMachine":

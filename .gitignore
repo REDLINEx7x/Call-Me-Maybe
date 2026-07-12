@@ -1,0 +1,11 @@
+# Python essentials
+__pycache__/
+*.pyc
+
+# Virtual Environment
+.venv/
+venv/
+
+# Editor & OS
+.vscode/
+.DS_Store

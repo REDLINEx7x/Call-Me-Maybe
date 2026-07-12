@@ -22,7 +22,7 @@ def generate_constrained_json(prompt, model, tokenizer, schema):
         next_token_txt = mode.decode(next_token_id)
         genertaed_txt += next_token_txt
 
-        state.
+        state.update(next_token_txt)
 
 
 
