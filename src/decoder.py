@@ -34,10 +34,10 @@ def filter_tokens(logits, state, vocab):
 
     for token_str, text in vocab.items():
         token_id = int(token_str)
-        if current_state.START:
+        if current_state == "START":
             if not text.startswith("{"):
                 wrong_ids.append(token_id)
-        elif current_state.EXPECT_KEY:
+        elif current_state == "EXPECT_KEY":
             pass
 
     if wrong_ids:
