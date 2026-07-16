@@ -14,14 +14,14 @@ def main():
 
     try:
         validated_prompts = load_prompts(args.input)
-        validated_functions = load_functions(args.functions_definition)
-
+        validated_functons = load_functions(args.functions_definition)
+        #print(validated_functons)
         if not validated_functions or not validated_prompts:
             return
     except Exception as e:
         print(f"")
-
-    for p in validated_prompts:
-        print(p)
+    valid_function_names = [func.name for func in loaded_functions]
+    #for p in validated_functons:
+    #    print(p)
 
 main()
