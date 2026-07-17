@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import List, Any
 from pydantic import ValidationError
 from .models import PromptModel, FunctionDefinition
-
 def load_prompts(file_path: str) -> List[PromptModel]:
     """Read and validate the prompts JSON file.
 
@@ -95,4 +94,23 @@ def load_functions(file_path: str) -> List[FunctionDefinition]:
     return validated_functions
 
 
+def load_vocab(model: Small_LLM_Model) -> dict[int, str]:
+    """Load the vocab file and return an id-to-token lookup.
 
+    Args:
+        model: The SDK model instance, used to locate the vocab file.
+
+    Returns:
+        A mapping from token id to its string representation.
+
+    Raises:
+        RuntimeError: If the vocab file cannot be read or parsed.
+    """
+    try:
+        path = model.get_path_to_vocab_file()
+        with open(path, "r", encoding="utf-8") as f:
+            raw_vocab = json.load(f)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"Could not load vocab file: {exc}") from exc
+
+    return {token_id: token_str for token_str, token_id in raw_vocab.items()}

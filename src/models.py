@@ -122,16 +122,18 @@ class JSONStateMachine(BaseModel):
         """
         # Katjib les arguments w types dyalhom men 'parameters' dyal l'json
         parameters = schema_dict.get("parameters", {})
-        properties = parameters.get("properties", {})
+        properties = parameters.get("properties", parameters)
 
         expected_keys = list(properties.keys())
-        required_types = {
-            key: val.get("type", "string")
-            for key, val in properties.items()
-        }
+        required_types = {}
+        for key, val in properties.items():
+            if isinstance(val, dict):
+                required_types[key] = val.get("type", "string")
+            else:
+                required_types[key] = getattr(val, "type", "string")
 
         return cls(
-            current_state=JSONState.START,
+            current_state="START",
             expected_keys=expected_keys,
             required_types=required_types,
             seen_keys=[],
