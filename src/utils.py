@@ -2,7 +2,9 @@ import json
 from pathlib import Path
 from typing import List, Any
 from pydantic import ValidationError
-from .models import PromptModel, FunctionDefinition
+from models import PromptModel, FunctionDefinition
+from llm_sdk.llm_sdk import Small_LLM_Model
+
 def load_prompts(file_path: str) -> List[PromptModel]:
     """Read and validate the prompts JSON file.
 
@@ -46,7 +48,7 @@ def load_prompts(file_path: str) -> List[PromptModel]:
         print(f"Error: Pydantic validation failed for prompts in '{file_path}':\n{e}")
         return []
 
-    return validated_prompts
+    return [p.dict() for p in validated_prompts]
 
 
 def load_functions(file_path: str) -> List[FunctionDefinition]:
@@ -79,11 +81,12 @@ def load_functions(file_path: str) -> List[FunctionDefinition]:
         print(f"Error: The root of '{file_path}' must be a JSON array (list).")
         return []
 
-    validated_functions: List[FunctionDefinition] = []
+    validated_functions = []
     try:
         for item in data:
             if isinstance(item, dict):
-                validated_functions.append(FunctionDefinition(**item))
+                functions = FunctionDefinition(**item)
+                validated_functions.append(functions.dict())
             else:
                 print(f"Error: Invalid item format in '{file_path}'. Expected dictionary.")
                 return []

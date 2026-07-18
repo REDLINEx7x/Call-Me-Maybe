@@ -1,8 +1,8 @@
 import numpy as np
 import json
 from models import JSONState, JSONStateMachine
-
-def generate_constrained_json(prompt, model, tokenizer, schema):
+from llm_sdk.llm_sdk import Small_LLM_Model
+def generate_constrained_json(prompt: str, model: Small_LLM_Model, vocab: dict, schema: dict, valid_names: list[str]):
 
     vocab_path = model.get_path_to_vocab_file()
     with open(vocab_path, "r", encoding="utf-8") as f:

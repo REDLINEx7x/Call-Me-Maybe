@@ -1,7 +1,7 @@
 import sys
 import argparse
-from .utils import load_functions, load_prompts, load_vocab
-from ..llm_sdk import Small_LLM_Model
+from utils import load_functions, load_prompts, load_vocab
+from llm_sdk.llm_sdk import Small_LLM_Model
 from decoder import generate_constrained_json
 
 
@@ -15,7 +15,7 @@ def main():
     args = parser.parse_args()
 
     model = Small_LLM_Model()
-    vocab = load_vocab(model)
+    #vocab = load_vocab(model)
 
     try:
         validated_prompts = load_prompts(args.input)
@@ -23,16 +23,21 @@ def main():
         if not validated_functions or not validated_prompts:
             return
     except Exception as e:
-        print(f"")
-    valid_function_names = [func.name for func in validated_functions]
-    phase = "FUNCTION_SELECTION"
-    for prompt in validated_prompts:
-        text_prompt = prompt.get("prompt", "")
+        print(f"Error loading files: {e}")
+        return
 
-        phase = "FUNCTION_SELECTION"
-        func_buffer = ""
-        chosen_function = None
-        results = generate_constrained_json(text_prompt, model, schema)
-        all_answers.append(result)
 
-main()
+    valid_function_names = [func.get("name") for func in validated_functions]
+    schemas_dict = {func.get("name"): func for func in validated_functions}
+    #for prompt in validated_prompts:
+    #    text_prompt = prompt.get("prompt", "")
+    #    results = generate_constrained_json(text_prompt, model, vocab, schema_dict, valid_function_names)
+    #    all_answers.append(results)
+
+    #with open(args.output, "w", encoding="utf-8") as f:
+    #    json.dump(all_answers, f, indent=4)
+
+    #print(f"Done! Results saved successfully to {args.output}")
+    print(schemas_dict)
+if __name__ == "__main__":
+    main()
