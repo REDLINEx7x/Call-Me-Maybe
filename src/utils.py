@@ -104,34 +104,6 @@ def load_functions(file_path: str) -> List[Dict[str, Any]]:
     return validated_functions
 
 
-def load_vocab(model: Small_LLM_Model) -> Dict[int, str]:
-    """Load the vocab file and return an id-to-token lookup.
-
-    Args:
-        model: The SDK model instance used to locate the vocab file.
-
-    Returns:
-        A mapping from token ID (int) to token string representation.
-
-    Raises:
-        RuntimeError: If the vocab file cannot be read or parsed.
-    """
-    try:
-        path = model.get_path_to_vocab_file()
-        with open(path, "r", encoding="utf-8") as f:
-            raw_vocab = json.load(f)
-    except (OSError, json.JSONDecodeError) as exc:
-        raise RuntimeError(f"Could not load vocab file: {exc}") from exc
-
-    vocab_dict: Dict[int, str] = {}
-    try:
-        for token_str, token_id in raw_vocab.items():
-            vocab_dict[int(token_id)] = str(token_str)
-    except (ValueError, TypeError) as exc:
-        raise RuntimeError(f"Invalid token ID format in vocab: {exc}") from exc
-
-    return vocab_dict
-
 def build_prompt(user_prompt: str, functions: List[Dict[str, Any]]) -> str:
     """Construct a prompt that gives the model context on available functions.
 
@@ -140,18 +112,25 @@ def build_prompt(user_prompt: str, functions: List[Dict[str, Any]]) -> str:
         functions: The list of available function definitions.
 
     Returns:
-        A prompt string including function descriptions and the user request.
+        A prompt string describing available functions and the user request,
+        formatted to steer the model toward JSON-style output rather than
+        function-call syntax.
     """
     lines = []
     for f in functions:
-        param_list = ", ".join(f["parameters"].keys())
-        lines.append(f'- {f["name"]}({param_list}): {f["description"]}')
+        param_names = ", ".join(f["parameters"].keys())
+        lines.append(
+            f'- "{f["name"]}": {f["description"]} '
+            f'(parameters: {param_names})'
+        )
     functions_desc = "\n".join(lines)
 
     return (
         "You are a function calling assistant. Given the user's request, "
-        "respond with a JSON object calling the correct function.\n\n"
+        "choose the correct function and respond with a JSON object.\n\n"
         f"Available functions:\n{functions_desc}\n\n"
+        "Respond only with JSON in this exact shape: "
+        '{"name": "<function_name>", "parameters": {...}}\n\n'
         f"User request: {user_prompt}\n"
         "Function call:"
     )

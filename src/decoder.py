@@ -56,8 +56,8 @@ def generate_constrained_json(
             )
         next_token_id = int(np.argmax(filtered_logits))
         input_ids.append(next_token_id)
-        next_token_txt = model.decode([next_token_id])
-        print(repr(vocab[next_token_id]), next_token_id)
+        next_token_txt = vocab[next_token_id]
+        print(repr(vocab[next_token_id]))
         if phase == "FUNCTION_SELECTION":
             current_buffer += next_token_txt
 
@@ -73,7 +73,7 @@ def generate_constrained_json(
             try:
                 state.update(next_token_txt)
             except ValueError as e:
-                raise ValueError("")
+                raise RuntimeError(f"State machine error: {e}") from e
             if state.current_state == "DONE":
                 break
 
@@ -114,7 +114,6 @@ def filter_tokens(
     known_ids = set(int(tid) for tid in vocab.keys())
     wrong_ids |= (all_ids - known_ids)
     if phase == "FUNCTION_SELECTION":
-        print(f"buffer so far: {current_buffer!r}")
         for token_id, token_txt in vocab.items():
             tid = int(token_id)
             ttxt = str(token_txt)
@@ -140,6 +139,9 @@ def filter_tokens(
                     wrong_ids.add(tid)
 
             elif state.current_state == "EXPECT_KEY":
+                if any(c in ttxt for c in "()"):
+                    wrong_ids.add(tid)
+                    continue
                 valid_keys = [
                     f'"{k}"'
                     for k in state.expected_keys
