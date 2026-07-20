@@ -2,7 +2,6 @@ from pydantic import BaseModel, Field
 from typing import Literal
 from enum import Enum
 from typing import Any, Dict, List
-from pydantic import BaseModel, Field
 
 JSONState = Literal["START", "EXPECT_KEY", "EXPECT_COLON", "EXPECT_VALUE", "EXPECT_SEPARATOR", "DONE"]
 
@@ -11,17 +10,17 @@ class PromptModel(BaseModel):
     prompt: str = Field(..., min_length=1)
 
 
-class propertyType(BaseModel):
+class PropertyType(BaseModel):
 
-    type: Literal["string", "number", "boolean"]
+    type: Literal["string", "number", "integer", "boolean", "null"]
 
 
 class FunctionDefinition(BaseModel):
 
     name: str = Field(min_length=1)
     description: str = Field(min_length=1)
-    parameters: dict[str, propertyType]
-    returns:propertyType
+    parameters: dict[str, PropertyType]
+    returns: PropertyType
 
 
 class JSONStateMachine(BaseModel):
@@ -34,7 +33,7 @@ class JSONStateMachine(BaseModel):
     buffer: str = ""
     parsed_data: Dict[str, Any] = Field(default_factory=dict)
 
-    def update(self, next_token: str):
+    def update(self, next_token: str) -> None:
         self.buffer += next_token
 
         if self.current_state == "START":
@@ -51,6 +50,9 @@ class JSONStateMachine(BaseModel):
                 sec_quote = self.buffer.index('"', first_quote + 1)
                 sliced_key = self.buffer[first_quote + 1:sec_quote]
                 self.current_key = sliced_key
+                if sliced_key not in self.expected_keys:
+                    raise ValueError(f"Unexpected key: {sliced_key}")
+
                 self.current_state = "EXPECT_COLON"
                 self.buffer = self.buffer[sec_quote + 1:]
                 return
@@ -80,24 +82,33 @@ class JSONStateMachine(BaseModel):
 
             elif expected_type in ["number", "integer", "boolean", "null"]:
                 if "," in self.buffer or "}" in self.buffer:
-                    delimiters = [self.buffer.index(char) for char in [",", "}"] if char in self.buffer]
-                    end_i = min(delimiters)
-                    raw_val = self.buffer[:end_i].strip()
+                    comma_i = self.buffer.index(",") if "," in self.buffer else None
+                    brace_i = self.buffer.index("}") if "}" in self.buffer else None
+                    if comma_i is not None and (brace_i is None or comma_i < brace_i):
+                        end_i, found_char = comma_i, ","
+                    else:
+                        end_i, found_char = brace_i, "}"
 
+                    raw_val = self.buffer[:end_i].strip()
                     value = None
                     if expected_type in ["number", "integer"]:
                         value = float(raw_val) if "." in raw_val else int(raw_val)
                     elif expected_type == "boolean":
-                        value = True if raw_val == "true" else False
-                    elif expected_type == "null":
-                        value = None
+                        value = raw_val == "true"
 
                     self.parsed_data[self.current_key] = value
                     self.seen_keys.append(self.current_key)
-                    self.buffer = self.buffer[end_i:]
-                    self.current_state = "EXPECT_SEPARATOR"
-                    return
+                    self.buffer = self.buffer[end_i + 1:]
 
+                    if found_char == ",":
+                        self.current_key = ""
+                        self.current_state = "EXPECT_KEY"   # FIXED: skip EXPECT_SEPARATOR
+                    else:
+                        missing_keys = set(self.expected_keys) - set(self.seen_keys)
+                        if missing_keys:
+                            raise ValueError(f"Missing required keys: {missing_keys}")
+                        self.current_state = "DONE"          # FIXED: skip EXPECT_SEPARATOR
+                    return
         elif self.current_state == "EXPECT_SEPARATOR":
             if "," in self.buffer:
                 i = self.buffer.index(',')
@@ -105,6 +116,9 @@ class JSONStateMachine(BaseModel):
                 self.current_state = "EXPECT_KEY"
                 return
             elif "}" in self.buffer:
+                missing_keys = set(self.expected_keys) - set(self.seen_keys)
+                if missing_keys:
+                    raise ValueError(f"Missing required keys: {missing_keys}")
                 self.buffer = ""
                 self.current_state = "DONE"
                 return
@@ -122,11 +136,9 @@ class JSONStateMachine(BaseModel):
         """
         # Katjib les arguments w types dyalhom men 'parameters' dyal l'json
         parameters = schema_dict.get("parameters", {})
-        properties = parameters.get("properties", parameters)
-
-        expected_keys = list(properties.keys())
+        expected_keys = list(parameters.keys())
         required_types = {}
-        for key, val in properties.items():
+        for key, val in parameters.items():
             if isinstance(val, dict):
                 required_types[key] = val.get("type", "string")
             else:
