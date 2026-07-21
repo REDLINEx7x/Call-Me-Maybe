@@ -66,18 +66,34 @@ class JSONStateMachine(BaseModel):
 
         elif self.current_state == "EXPECT_VALUE":
             expected_type = self.required_types.get(self.current_key)
-
             if expected_type == "string":
                 if self.buffer.count('"') >= 2:
                     first_quote = self.buffer.index('"')
                     sec_quote = self.buffer.index('"', first_quote + 1)
-                    sliced_val = self.buffer[first_quote + 1:sec_quote]
-
+                    sliced_val = self.buffer[first_quote + 1:sec_quote].replace("Ġ", " ")
                     self.parsed_data[self.current_key] = sliced_val
                     self.seen_keys.append(self.current_key)
 
-                    self.buffer = self.buffer[sec_quote + 1:]
-                    self.current_state = "EXPECT_SEPARATOR"
+                    remainder = self.buffer[sec_quote + 1:]
+
+                    comma_i = remainder.index(",") if "," in remainder else None
+                    brace_i = remainder.index("}") if "}" in remainder else None
+
+                    if comma_i is not None and (brace_i is None or comma_i < brace_i):
+                        # delimiter already present in this token — consume it directly
+                        self.buffer = remainder[comma_i + 1:]
+                        self.current_key = ""
+                        self.current_state = "EXPECT_KEY"
+                    elif brace_i is not None:
+                        missing_keys = set(self.expected_keys) - set(self.seen_keys)
+                        if missing_keys:
+                            raise ValueError(f"Missing required keys: {missing_keys}")
+                        self.buffer = remainder[brace_i + 1:]
+                        self.current_state = "DONE"
+                    else:
+                        # no delimiter yet — wait for the next token
+                        self.buffer = remainder
+                        self.current_state = "EXPECT_SEPARATOR"
                     return
 
             elif expected_type in ["number", "integer", "boolean", "null"]:

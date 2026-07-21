@@ -165,6 +165,23 @@ def filter_tokens(
                 if expected_type == "string":
                     if state.buffer.strip() == "" and '"' not in ttxt:
                         wrong_ids.add(tid)
+                        continue
+                    candidate = state.buffer + ttxt
+                    if candidate.count('"') >= 2:
+                        first_q = candidate.index('"')
+                        second_q = candidate.index('"', first_q + 1)
+                        after_closing = candidate[second_q + 1:]
+
+                        remaining_keys = [
+                            k for k in state.expected_keys
+                            if k not in state.seen_keys and k != state.current_key
+                        ]
+                        allowed = "," if remaining_keys else "}"
+                        allowed += " \n"
+
+                        if after_closing.strip() and not all(c in allowed for c in after_closing):
+                            wrong_ids.add(tid)
+
                 elif expected_type in ["number", "integer"]:
                     digit_chars = "0123456789.-"
                     has_digits = any(c.isdigit() for c in state.buffer.strip())
@@ -172,8 +189,9 @@ def filter_tokens(
                         k for k in state.expected_keys
                         if k not in state.seen_keys and k != state.current_key
                     ]
-                    allowed_separators = ",}" if remaining_keys else "}"
+                    allowed_separators = "," if remaining_keys else "}"
                     allowed_separators += " \n"
+
                     for ch in ttxt:
                         if ch in digit_chars:
                             continue
@@ -196,8 +214,9 @@ def filter_tokens(
 
             elif state.current_state == "EXPECT_SEPARATOR":
                 remaining_keys = [k for k in state.expected_keys if k not in state.seen_keys]
-                allowed = "}," if remaining_keys else "}"
-                if not any(ch in allowed for ch in ttxt):
+                allowed = "," if remaining_keys else "}"
+                allowed += " \n"
+                if not all(ch in allowed for ch in ttxt):
                     wrong_ids.add(tid)
 
     if wrong_ids:
