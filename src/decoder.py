@@ -57,11 +57,8 @@ def generate_constrained_json(
         next_token_id = int(np.argmax(filtered_logits))
         input_ids.append(next_token_id)
         next_token_txt = vocab[next_token_id]
-        print(repr(vocab[next_token_id]))
         if phase == "FUNCTION_SELECTION":
             current_buffer += next_token_txt
-
-            #print(f"buffer so far: {current_buffer!r}")
             if current_buffer in valid_names:
                 selected_function_name = current_buffer
                 selected_schema = schema[selected_function_name]

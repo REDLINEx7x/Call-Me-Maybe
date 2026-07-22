@@ -126,39 +126,9 @@ def load_vocab(model: Small_LLM_Model) -> dict[int, str]:
     return {token_id: token_str for token_str, token_id in raw_vocab.items()}
 
 
-def build_prompt(user_prompt: str, functions: List[Dict[str, Any]]) -> str:
-    """Construct a prompt that gives the model context on available functions.
-
-    Args:
-        user_prompt: The raw natural language request.
-        functions: The list of available function definitions.
-
-    Returns:
-        A prompt string describing available functions and the user request,
-        formatted to steer the model toward JSON-style output rather than
-        function-call syntax.
-    """
-    lines = []
-    for f in functions:
-        param_names = ", ".join(f["parameters"].keys())
-        lines.append(
-            f'- "{f["name"]}": {f["description"]} '
-            f'(parameters: {param_names})'
-        )
-    functions_desc = "\n".join(lines)
 
 def build_prompt(user_prompt: str, functions: List[Dict[str, Any]]) -> str:
-    """Construct a prompt that gives the model context on available functions.
-
-    Args:
-        user_prompt: The raw natural language request.
-        functions: The list of available function definitions.
-
-    Returns:
-        A prompt string describing available functions, a worked example,
-        and the user request — formatted to steer the model toward
-        correct JSON-style output with values extracted from the request.
-    """
+    """Construct a prompt with function context and regex examples."""
     lines = []
     for f in functions:
         param_names = ", ".join(f["parameters"].keys())
@@ -174,9 +144,13 @@ def build_prompt(user_prompt: str, functions: List[Dict[str, Any]]) -> str:
         f"Available functions:\n{functions_desc}\n\n"
         "Respond only with JSON in this exact shape: "
         '{"name": "<function_name>", "parameters": {...}}\n\n'
-        "Example:\n"
+        "Examples:\n"
         "User request: Greet mary\n"
         'Function call: {"name": "fn_greet", "parameters": {"name": "mary"}}\n\n'
+        "User request: Replace all numbers with X\n"
+        'Function call: {"name": "fn_substitute_string_with_regex", "parameters": {"source_string": "text here", "regex": "[0-9]+", "replacement": "X"}}\n\n'
+        "User request: Replace all vowels with *\n"
+        'Function call: {"name": "fn_substitute_string_with_regex", "parameters": {"source_string": "text here", "regex": "[aeiou]", "replacement": "*"}}\n\n'
         f"User request: {user_prompt}\n"
         "Function call:"
     )
