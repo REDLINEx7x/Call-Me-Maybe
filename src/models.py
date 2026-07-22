@@ -108,7 +108,10 @@ class JSONStateMachine(BaseModel):
                     raw_val = self.buffer[:end_i].strip()
                     value = None
                     if expected_type in ["number", "integer"]:
-                        value = float(raw_val) if "." in raw_val else int(raw_val)
+                        if expected_type == "number":
+                            value = float(raw_val)
+                        else:
+                            value = int(raw_val) if "." not in raw_val else float(raw_val)
                     elif expected_type == "boolean":
                         value = raw_val == "true"
 

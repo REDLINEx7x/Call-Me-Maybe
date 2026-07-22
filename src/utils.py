@@ -147,12 +147,36 @@ def build_prompt(user_prompt: str, functions: List[Dict[str, Any]]) -> str:
         )
     functions_desc = "\n".join(lines)
 
+def build_prompt(user_prompt: str, functions: List[Dict[str, Any]]) -> str:
+    """Construct a prompt that gives the model context on available functions.
+
+    Args:
+        user_prompt: The raw natural language request.
+        functions: The list of available function definitions.
+
+    Returns:
+        A prompt string describing available functions, a worked example,
+        and the user request — formatted to steer the model toward
+        correct JSON-style output with values extracted from the request.
+    """
+    lines = []
+    for f in functions:
+        param_names = ", ".join(f["parameters"].keys())
+        lines.append(
+            f'- "{f["name"]}": {f["description"]} '
+            f'(parameters: {param_names})'
+        )
+    functions_desc = "\n".join(lines)
+
     return (
         "You are a function calling assistant. Given the user's request, "
         "choose the correct function and respond with a JSON object.\n\n"
         f"Available functions:\n{functions_desc}\n\n"
         "Respond only with JSON in this exact shape: "
         '{"name": "<function_name>", "parameters": {...}}\n\n'
+        "Example:\n"
+        "User request: Greet mary\n"
+        'Function call: {"name": "fn_greet", "parameters": {"name": "mary"}}\n\n'
         f"User request: {user_prompt}\n"
         "Function call:"
     )
