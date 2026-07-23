@@ -1,10 +1,10 @@
 [
     {
-        "prompt": "What is the sum of 2 and 3?",
+        "prompt": "What is the sum of NULL and NULL?",
         "name": "fn_add_numbers",
         "parameters": {
-            "a": 2.0,
-            "b": 3.0
+            "a": 0.0,
+            "b": 0.0
         }
     },
     {

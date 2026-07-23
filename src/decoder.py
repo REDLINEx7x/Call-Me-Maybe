@@ -36,7 +36,7 @@ def generate_constrained_json(
     phase = "FUNCTION_SELECTION"
     current_buffer = ""
     selected_function_name = None
-    max_steps = 100
+    max_steps = 300
     for _ in range(max_steps):
         ids_logits = model.get_logits_from_input_ids(input_ids)
         filtered_logits = filter_tokens(

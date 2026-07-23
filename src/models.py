@@ -109,7 +109,10 @@ class JSONStateMachine(BaseModel):
                     value = None
                     if expected_type in ["number", "integer"]:
                         if expected_type == "number":
-                            value = float(raw_val)
+                            try:
+                                value = float(raw_val)
+                            except ValueError:
+                                raise ValueError(f"Cannot parse '{raw_val}' as {expected_type}")
                         else:
                             value = int(raw_val) if "." not in raw_val else float(raw_val)
                     elif expected_type == "boolean":

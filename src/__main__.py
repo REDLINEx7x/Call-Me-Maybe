@@ -38,8 +38,6 @@ def main() -> None:
         help="Path to output results JSON file"
     )
     args = parser.parse_args()
-
-    # Load model and vocabulary
     try:
         model = Small_LLM_Model()
         vocab = load_vocab(model)
@@ -47,22 +45,13 @@ def main() -> None:
         print(f"Error loading model or vocab: {e}")
         return
 
-    # Load input files
-    try:
         validated_prompts = load_prompts(args.input)
         validated_functions = load_functions(args.functions_definition)
 
         if not validated_functions or not validated_prompts:
             print("Error: No valid prompts or functions loaded.")
             return
-    except FileNotFoundError as e:
-        print(f"Error: Input file not found: {e}")
-        return
-    except ValueError as e:
-        print(f"Error: Invalid input: {e}")
-        return
 
-    # Create function lookup
     valid_function_names = [func.get("name") for func in validated_functions]
     schema_dict = {func.get("name"): func for func in validated_functions}
 

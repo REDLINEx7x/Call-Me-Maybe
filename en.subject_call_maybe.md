@@ -1,595 +1,595 @@
-call me maybe 
+call me maybe
 
-Introduction to function calling in LLMs 
+Introduction to function calling in LLMs
 
-*Summary: Does LLMs speak the language of computers? We’ll find out. Made in collaboration with @ldevelle, @pcamaren, @crfernan* 
+*Summary: Does LLMs speak the language of computers? We’ll find out. Made in collaboration with @ldevelle, @pcamaren, @crfernan*
 
-*Version: 1.5*  
-**Contents** 
+*Version: 1.5*
+**Contents**
 
-**I Foreword 2 II AI Instructions 3** 
+**I Foreword 2 II AI Instructions 3**
 
-**III Introduction 5** III.1 What is Function Calling? . . . . . . . . . . . . . . . . . . . . . . . . 5 III.2 Why is This Important? . . . . . . . . . . . . . . . . . . . . . . . . . 6 III.3 The Challenge . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 6 
+**III Introduction 5** III.1 What is Function Calling? . . . . . . . . . . . . . . . . . . . . . . . . 5 III.2 Why is This Important? . . . . . . . . . . . . . . . . . . . . . . . . . 6 III.3 The Challenge . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 6
 
-**IV Common Instructions 7** IV.1 General Rules . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 7 IV.2 Makefile . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 7 IV.3 Additional Guidelines . . . . . . . . . . . . . . . . . . . . . . . . . . . 8 
+**IV Common Instructions 7** IV.1 General Rules . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 7 IV.2 Makefile . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 7 IV.3 Additional Guidelines . . . . . . . . . . . . . . . . . . . . . . . . . . . 8
 
-IV.3.1 Additional Requirements . . . . . . . . . . . . . . . . . . . . . . . 8 IV.3.2 Usage . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 9 
+IV.3.1 Additional Requirements . . . . . . . . . . . . . . . . . . . . . . . 8 IV.3.2 Usage . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 9
 
-**V Mandatory part 10** V.1 Summary . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 10 V.2 Input Files . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 10 V.3 LLM Interaction . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 12 
+**V Mandatory part 10** V.1 Summary . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 10 V.2 Input Files . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 10 V.3 LLM Interaction . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 12
 
-V.3.1 The LLM SDK . . . . . . . . . . . . . . . . . . . . . . . . . . . . 12 V.3.2 The Generation Pipeline . . . . . . . . . . . . . . . . . . . . . . . 12 V.3.3 Understanding Constrained Decoding . . . . . . . . . . . . . . . . 13 
+V.3.1 The LLM SDK . . . . . . . . . . . . . . . . . . . . . . . . . . . . 12 V.3.2 The Generation Pipeline . . . . . . . . . . . . . . . . . . . . . . . 12 V.3.3 Understanding Constrained Decoding . . . . . . . . . . . . . . . . 13
 
-V.4 Output File Format . . . . . . . . . . . . . . . . . . . . . . . . . . . . 14 V.4.1 Example Output . . . . . . . . . . . . . . . . . . . . . . . . . . . 14 V.4.2 Validation Rules . . . . . . . . . . . . . . . . . . . . . . . . . . . . 14 
+V.4 Output File Format . . . . . . . . . . . . . . . . . . . . . . . . . . . . 14 V.4.1 Example Output . . . . . . . . . . . . . . . . . . . . . . . . . . . 14 V.4.2 Validation Rules . . . . . . . . . . . . . . . . . . . . . . . . . . . . 14
 
-V.5 Performance and Reliability . . . . . . . . . . . . . . . . . . . . . . . 15 V.6 Testing Your Implementation . . . . . . . . . . . . . . . . . . . . . . . 15 
+V.5 Performance and Reliability . . . . . . . . . . . . . . . . . . . . . . . 15 V.6 Testing Your Implementation . . . . . . . . . . . . . . . . . . . . . . . 15
 
-**VI Readme Requirements 16 VII Bonus Part 18 VIII Submission and peer review 19** 
+**VI Readme Requirements 16 VII Bonus Part 18 VIII Submission and peer review 19**
 
-1  
-**Chapter I** 
+1
+**Chapter I**
 
-**Foreword** 
+**Foreword**
 
-Roman engineers carved stone tablets with perfect grids to track grain shipments across the empire, so no delivery was lost to bad handwriting. In the 1800s, sailors logged ocean currents in structured tables so precise that some are still used in navigation today. 
+Roman engineers carved stone tablets with perfect grids to track grain shipments across the empire, so no delivery was lost to bad handwriting. In the 1800s, sailors logged ocean currents in structured tables so precise that some are still used in navigation today.
 
-The first weather forecasts were sent as telegrams in a fixed code — a few numbers that could describe an entire sky. In the 1960s, NASA’s mission control worked from laminated flowcharts that told them exactly what each blinking light meant, no matter who was on shift. Barcode scanners in supermarkets translated black-and-white stripes into inventory data long before most homes had computers. Even beekeepers have used standardized forms for decades, recording hive health, nectar flow, and queen lineage in tiny boxes only they could read at a glance. 
+The first weather forecasts were sent as telegrams in a fixed code — a few numbers that could describe an entire sky. In the 1960s, NASA’s mission control worked from laminated flowcharts that told them exactly what each blinking light meant, no matter who was on shift. Barcode scanners in supermarkets translated black-and-white stripes into inventory data long before most homes had computers. Even beekeepers have used standardized forms for decades, recording hive health, nectar flow, and queen lineage in tiny boxes only they could read at a glance.
 
-Humans have always built structures to make information reliable, shareable, and usable. Which brings us to today, where the goal is to make AI speak the language of computers. 
+Humans have always built structures to make information reliable, shareable, and usable. Which brings us to today, where the goal is to make AI speak the language of computers.
 
-2  
-**Chapter II** 
+2
+**Chapter II**
 
-**AI Instructions** 
+**AI Instructions**
 
-● **Context** 
+● **Context**
 
-During your learning journey, AI can assist with many different tasks. Take the time to explore the various capabilities of AI tools and how they can support your work. How ever, always approach them with caution and critically assess the results. Whether it’s code, documentation, ideas, or technical explanations, you can never be completely sure that your question was well-formed or that the generated content is accurate. Your peers are a valuable resource to help you avoid mistakes and blind spots. 
+During your learning journey, AI can assist with many different tasks. Take the time to explore the various capabilities of AI tools and how they can support your work. How ever, always approach them with caution and critically assess the results. Whether it’s code, documentation, ideas, or technical explanations, you can never be completely sure that your question was well-formed or that the generated content is accurate. Your peers are a valuable resource to help you avoid mistakes and blind spots.
 
-● **Main message** 
+● **Main message**
 
-☛ Use AI to reduce repetitive or tedious tasks. 
+☛ Use AI to reduce repetitive or tedious tasks.
 
-☛ Develop prompting skills — both coding and non-coding — that will benefit your future career. 
+☛ Develop prompting skills — both coding and non-coding — that will benefit your future career.
 
-☛ Learn how AI systems work to better anticipate and avoid common risks, biases, and ethical issues. 
+☛ Learn how AI systems work to better anticipate and avoid common risks, biases, and ethical issues.
 
-☛ Continue building both technical and power skills by working with your peers. 
+☛ Continue building both technical and power skills by working with your peers.
 
-☛ Only use AI-generated content that you fully understand and can take responsibility for. 
+☛ Only use AI-generated content that you fully understand and can take responsibility for.
 
-● **Learner rules:** 
+● **Learner rules:**
 
-*•* You should take the time to explore AI tools and understand how they work, so you can use them ethically and reduce potential biases. 
+*•* You should take the time to explore AI tools and understand how they work, so you can use them ethically and reduce potential biases.
 
-*•* You should reflect on your problem before prompting — this helps you write clearer, more detailed, and more relevant prompts using accurate vocabulary. 
+*•* You should reflect on your problem before prompting — this helps you write clearer, more detailed, and more relevant prompts using accurate vocabulary.
 
-*•* You should develop the habit of systematically checking, reviewing, questioning, and testing anything generated by AI. 
+*•* You should develop the habit of systematically checking, reviewing, questioning, and testing anything generated by AI.
 
-*•* You should always seek peer review — don’t rely solely on your own validation. 3  
-call me maybe Introduction to function calling in LLMs 
+*•* You should always seek peer review — don’t rely solely on your own validation. 3
+call me maybe Introduction to function calling in LLMs
 
-● **Phase outcomes:** 
+● **Phase outcomes:**
 
-*•* Develop both general-purpose and domain-specific prompting skills. *•* Boost your productivity with effective use of AI tools. 
+*•* Develop both general-purpose and domain-specific prompting skills. *•* Boost your productivity with effective use of AI tools.
 
-*•* Continue strengthening computational thinking, problem-solving, adaptability, and collaboration. 
+*•* Continue strengthening computational thinking, problem-solving, adaptability, and collaboration.
 
-● **Comments and examples:** 
+● **Comments and examples:**
 
-*•* You’ll regularly encounter situations — exams, evaluations, and more — where you must demonstrate real understanding. Be prepared, keep building both your technical and interpersonal skills. 
+*•* You’ll regularly encounter situations — exams, evaluations, and more — where you must demonstrate real understanding. Be prepared, keep building both your technical and interpersonal skills.
 
-*•* Explaining your reasoning and debating with peers often reveals gaps in your un derstanding. Make peer learning a priority. 
+*•* Explaining your reasoning and debating with peers often reveals gaps in your un derstanding. Make peer learning a priority.
 
-*•* AI tools often lack your specific context and tend to provide generic responses. Your peers, who share your environment, can offer more relevant and accurate insights. 
+*•* AI tools often lack your specific context and tend to provide generic responses. Your peers, who share your environment, can offer more relevant and accurate insights.
 
-*•* Where AI tends to generate the most likely answer, your peers can provide alter native perspectives and valuable nuance. Rely on them as a quality checkpoint. 
+*•* Where AI tends to generate the most likely answer, your peers can provide alter native perspectives and valuable nuance. Rely on them as a quality checkpoint.
 
-✓ **Good practice:** 
+✓ **Good practice:**
 
-I ask AI: “How do I test a sorting function?” It gives me a few ideas. I try them out and review the results with a peer. We refine the approach together. 
+I ask AI: “How do I test a sorting function?” It gives me a few ideas. I try them out and review the results with a peer. We refine the approach together.
 
-✗ **Bad practice:** 
+✗ **Bad practice:**
 
-I ask AI to write a whole function, copy-paste it into my project. During peer evaluation, I can’t explain what it does or why. I lose credibility — and I fail my project. 
+I ask AI to write a whole function, copy-paste it into my project. During peer evaluation, I can’t explain what it does or why. I lose credibility — and I fail my project.
 
-✓ **Good practice:** 
+✓ **Good practice:**
 
-I use AI to help design a parser. Then I walk through the logic with a peer. We catch two bugs and rewrite it together — better, cleaner, and fully understood. 
+I use AI to help design a parser. Then I walk through the logic with a peer. We catch two bugs and rewrite it together — better, cleaner, and fully understood.
 
-✗ **Bad practice:** 
+✗ **Bad practice:**
 
-I let Copilot generate my code for a key part of my project. It compiles, but I can’t explain how it handles pipes. During the evaluation, I fail to justify and I fail my project. 
+I let Copilot generate my code for a key part of my project. It compiles, but I can’t explain how it handles pipes. During the evaluation, I fail to justify and I fail my project.
 
-4  
-**Chapter III** 
+4
+**Chapter III**
 
-**Introduction** 
+**Introduction**
 
-**III.1 What is Function Calling?** 
+**III.1 What is Function Calling?**
 
-Large Language Models (LLMs) are powerful at understanding and generating human language, but they don’t naturally produce structured, machine-executable output. Func tion calling bridges this gap by translating natural language requests into precise function calls with typed arguments. 
+Large Language Models (LLMs) are powerful at understanding and generating human language, but they don’t naturally produce structured, machine-executable output. Func tion calling bridges this gap by translating natural language requests into precise function calls with typed arguments.
 
-Consider this example: Natural Language to Function Call 
+Consider this example: Natural Language to Function Call
 
-User: "What is the sum of 40 and 2?" 
+User: "What is the sum of 40 and 2?"
 
-Traditional LLM: "The sum of 40 and 2 is 42." 
+Traditional LLM: "The sum of 40 and 2 is 42."
 
-Function Calling System:   
-{   
-"function": "add\_numbers",   
-"arguments": {"a": 40, "b": 2}   
-} 
+Function Calling System:
+{
+"function": "add\_numbers",
+"arguments": {"a": 40, "b": 2}
+}
 
-The function calling system doesn’t answer the question directly. Instead, it provides the **tools** to solve it: the right function name and the correct arguments with proper types. 
+The function calling system doesn’t answer the question directly. Instead, it provides the **tools** to solve it: the right function name and the correct arguments with proper types.
 
-5  
-call me maybe Introduction to function calling in LLMs 
+5
+call me maybe Introduction to function calling in LLMs
 
-**III.2 Why is This Important?** 
+**III.2 Why is This Important?**
 
-Function calling enables LLMs to: 
+Function calling enables LLMs to:
 
-*•* **Interact with external systems**: Call APIs, query databases, control devices *•* **Execute code**: Perform calculations, data transformations, file operations *•* **Chain operations**: Break complex tasks into executable steps 
+*•* **Interact with external systems**: Call APIs, query databases, control devices *•* **Execute code**: Perform calculations, data transformations, file operations *•* **Chain operations**: Break complex tasks into executable steps
 
-*•* **Provide structured output**: Generate JSON, XML, or other machine-readable formats 
+*•* **Provide structured output**: Generate JSON, XML, or other machine-readable formats
 
-*•* **Extract structured data from unstructured text**: For example, given a large book, extract fields such as {protagonist name, protagonist sex, protagonist age} 
+*•* **Extract structured data from unstructured text**: For example, given a large book, extract fields such as {protagonist name, protagonist sex, protagonist age}
 
-This technology powers modern AI assistants, code generation tools, and autonomous agents, while also enabling tasks like automatic information extraction and knowledge structuring from raw text. 
+This technology powers modern AI assistants, code generation tools, and autonomous agents, while also enabling tasks like automatic information extraction and knowledge structuring from raw text.
 
-**III.3 The Challenge** 
+**III.3 The Challenge**
 
-Small language models (like the 0.6B parameter model you’ll use) are notoriously unre liable at generating structured output. When prompted to produce JSON, they might succeed only 30% of the time. Yet production systems achieve 99%+ reliability with these same small models. 
+Small language models (like the 0.6B parameter model you’ll use) are notoriously unre liable at generating structured output. When prompted to produce JSON, they might succeed only 30% of the time. Yet production systems achieve 99%+ reliability with these same small models.
 
-**How?** The answer lies in **constrained decoding** — a technique that guides the model’s output token-by-token to guarantee valid structure, without relying on prompting alone. 
+**How?** The answer lies in **constrained decoding** — a technique that guides the model’s output token-by-token to guarantee valid structure, without relying on prompting alone.
 
-6  
-**Chapter IV** 
+6
+**Chapter IV**
 
-**Common Instructions** 
+**Common Instructions**
 
-**IV.1 General Rules** 
+**IV.1 General Rules**
 
-*•* Your project must be written in **Python 3.10 or later**. 
+*•* Your project must be written in **Python 3.10 or later**.
 
-*•* Your project must adhere to the **flake8** coding standard. 
+*•* Your project must adhere to the **flake8** coding standard.
 
-*•* Your functions should handle exceptions gracefully to avoid crashes. Use try-except blocks to manage potential errors. Prefer context managers for resources like files or connections to ensure automatic cleanup. If your program crashes due to unhandled exceptions during the review, it will be considered non-functional. 
+*•* Your functions should handle exceptions gracefully to avoid crashes. Use try-except blocks to manage potential errors. Prefer context managers for resources like files or connections to ensure automatic cleanup. If your program crashes due to unhandled exceptions during the review, it will be considered non-functional.
 
-*•* All resources (e.g., file handles, network connections) must be properly managed to prevent leaks. Use context managers where possible for automatic handling. 
+*•* All resources (e.g., file handles, network connections) must be properly managed to prevent leaks. Use context managers where possible for automatic handling.
 
-*•* Your code must include type hints for function parameters, return types, and vari ables where applicable (using the typing module). Use mypy for static type check ing. All functions must pass mypy without errors. 
+*•* Your code must include type hints for function parameters, return types, and vari ables where applicable (using the typing module). Use mypy for static type check ing. All functions must pass mypy without errors.
 
-*•* Include docstrings in functions and classes following PEP 257 (e.g., Google or NumPy style) to document purpose, parameters, and returns. 
+*•* Include docstrings in functions and classes following PEP 257 (e.g., Google or NumPy style) to document purpose, parameters, and returns.
 
-**IV.2 Makefile** 
+**IV.2 Makefile**
 
-Include a Makefile in your project to automate common tasks. It must contain the following rules (mandatory lint implies the specified flags; it is strongly recommended to try –strict for enhanced checking): 
+Include a Makefile in your project to automate common tasks. It must contain the following rules (mandatory lint implies the specified flags; it is strongly recommended to try –strict for enhanced checking):
 
-*•* **install**: Install project dependencies using pip, uv, pipx, or any other package manager of your choice. 
+*•* **install**: Install project dependencies using pip, uv, pipx, or any other package manager of your choice.
 
-*•* **run**: Execute the main script of your project (e.g., via Python interpreter). 
+*•* **run**: Execute the main script of your project (e.g., via Python interpreter).
 
-*•* **debug**: Run the main script in debug mode using Python’s built-in debugger (e.g., pdb). 
+*•* **debug**: Run the main script in debug mode using Python’s built-in debugger (e.g., pdb).
 
-*•* **clean**: Remove temporary files or caches (e.g., \_\_pycache\_\_, .mypy\_cache) to keep the project environment clean. 
+*•* **clean**: Remove temporary files or caches (e.g., \_\_pycache\_\_, .mypy\_cache) to keep the project environment clean.
 
-7  
-call me maybe Introduction to function calling in LLMs 
+7
+call me maybe Introduction to function calling in LLMs
 
-*•* **lint**: Execute the commands flake8 . and mypy . \--warn-return-any \--warn-unused-ignores \--ignore-missing-imports \--disallow-untyped-defs \--check-untyped-defs 
+*•* **lint**: Execute the commands flake8 . and mypy . \--warn-return-any \--warn-unused-ignores \--ignore-missing-imports \--disallow-untyped-defs \--check-untyped-defs
 
-*•* **lint-strict** (optional): Execute the commands flake8 . and mypy . \--strict 
+*•* **lint-strict** (optional): Execute the commands flake8 . and mypy . \--strict
 
-**IV.3 Additional Guidelines** 
+**IV.3 Additional Guidelines**
 
-*•* Create test programs to verify project functionality (not submitted or graded). Use frameworks like pytest or unittest for unit tests, covering edge cases. 
+*•* Create test programs to verify project functionality (not submitted or graded). Use frameworks like pytest or unittest for unit tests, covering edge cases.
 
-*•* Include a .gitignore file to exclude Python artifacts. 
+*•* Include a .gitignore file to exclude Python artifacts.
 
-*•* It is recommended to use virtual environments (e.g., venv or conda) for dependency isolation during development. 
+*•* It is recommended to use virtual environments (e.g., venv or conda) for dependency isolation during development.
 
-*If any additional project-specific requirements apply, they will be stated immediately below this section.* 
+*If any additional project-specific requirements apply, they will be stated immediately below this section.*
 
-**IV.3.1 Additional Requirements** 
+**IV.3.1 Additional Requirements**
 
-*•* All classes must use **pydantic** for validation. 
+*•* All classes must use **pydantic** for validation.
 
-*•* You can use the **numpy** and **json** packages. 
+*•* You can use the **numpy** and **json** packages.
 
-*•* The use of **dspy** (or any similar package) is completely forbidden including pytorch, huggingface package, transformers, outlines, etc. 
+*•* The use of **dspy** (or any similar package) is completely forbidden including pytorch, huggingface package, transformers, outlines, etc.
 
-*•* You need to use the following models: 
+*•* You need to use the following models:
 
-*◦* **Qwen/Qwen3-0.6B** (default) 
+*◦* **Qwen/Qwen3-0.6B** (default)
 
-*◦* You can use other models as long as your project works with **Qwen/Qwen3- 0.6B**. 
+*◦* You can use other models as long as your project works with **Qwen/Qwen3- 0.6B**.
 
-*•* The function to call should be chosen using the LLM, not with heuristics or any other sort of medieval magic. 
+*•* The function to call should be chosen using the LLM, not with heuristics or any other sort of medieval magic.
 
-*•* It is forbidden to use any private methods or attributes from the llm\_sdk package. 
+*•* It is forbidden to use any private methods or attributes from the llm\_sdk package.
 
-*•* You should create a virtual environment and install the packages **numpy** and **pydantic** using **uv**. To use **llm\_sdk**, you can copy it in the same directory as the one src is in. 
+*•* You should create a virtual environment and install the packages **numpy** and **pydantic** using **uv**. To use **llm\_sdk**, you can copy it in the same directory as the one src is in.
 
-*•* The reviewer, as well as the moulinette, will just run uv sync. 
+*•* The reviewer, as well as the moulinette, will just run uv sync.
 
-*•* All errors should be handled gracefully. Your program must never crash unexpect edly and must always provide clear error messages to the user. 
+*•* All errors should be handled gracefully. Your program must never crash unexpect edly and must always provide clear error messages to the user.
 
-8  
-call me maybe Introduction to function calling in LLMs 
+8
+call me maybe Introduction to function calling in LLMs
 
-**IV.3.2 Usage** 
+**IV.3.2 Usage**
 
-Your program must be run using the following command (where src is the folder con taining your files): 
+Your program must be run using the following command (where src is the folder con taining your files):
 
-Running the program 
+Running the program
 
-uv run python \-m src \[--functions\_definition \<function\_definition\_file\>\] \[--input \<input\_file\>\] \[-- output \<output\_file\>\] 
+uv run python \-m src \[--functions\_definition \<function\_definition\_file\>\] \[--input \<input\_file\>\] \[-- output \<output\_file\>\]
 
-By default, the program will read input files from the data/input/ directory and write output to the data/output/ directory. You 
+By default, the program will read input files from the data/input/ directory and write output to the data/output/ directory. You
 
-can optionally specify custom paths using the \--input and \--output arguments. For example: 
+can optionally specify custom paths using the \--input and \--output arguments. For example:
 
-uv run python \-m src   
-\--functions\_definition data/input/functions\_definition.json   
-\--input data/input/function\_calling\_tests.json   
-\--output data/output/function\_calls.json 
+uv run python \-m src
+\--functions\_definition data/input/functions\_definition.json
+\--input data/input/function\_calling\_tests.json
+\--output data/output/function\_calls.json
 
-9  
-**Chapter V** 
+9
+**Chapter V**
 
-**Mandatory part** 
+**Mandatory part**
 
-**V.1 Summary** 
+**V.1 Summary**
 
-In this project, you will create a function calling tool that translates natural language prompts into structured function calls. Given a question like "What is the sum of 40 and 2?", your solution should not return 42, but instead provide: 
+In this project, you will create a function calling tool that translates natural language prompts into structured function calls. Given a question like "What is the sum of 40 and 2?", your solution should not return 42, but instead provide:
 
-*•* The function name: fn\_add\_numbers 
+*•* The function name: fn\_add\_numbers
 
-*•* The arguments: {"a": 40, "b": 2} 
+*•* The arguments: {"a": 40, "b": 2}
 
-Your implementation must use **constrained decoding** to guarantee 100% valid JSON output, ensuring near-perfect reliability even with a small 0.6B parameter model. 
+Your implementation must use **constrained decoding** to guarantee 100% valid JSON output, ensuring near-perfect reliability even with a small 0.6B parameter model.
 
-**V.2 Input Files** 
+**V.2 Input Files**
 
-Your solution will process two input files located in the data/input/ directory: 
+Your solution will process two input files located in the data/input/ directory:
 
-*•* function\_calling\_tests.json: contains a JSON array of natural language prompts that your system must process. 
+*•* function\_calling\_tests.json: contains a JSON array of natural language prompts that your system must process.
 
-Example: function\_calling\_tests.json 
+Example: function\_calling\_tests.json
 
-\[   
-{   
-"prompt": "What is the sum of 2 and 3?"   
-},   
-{   
-"prompt": "What is the sum of 265 and 345?"   
-},   
-{   
-"prompt": "Greet shrek"   
-},   
-{   
-"prompt": "Greet john"   
-},   
-{   
-"prompt": "Reverse the string 'hello'"   
-},   
-...   
-\] 
+\[
+{
+"prompt": "What is the sum of 2 and 3?"
+},
+{
+"prompt": "What is the sum of 265 and 345?"
+},
+{
+"prompt": "Greet shrek"
+},
+{
+"prompt": "Greet john"
+},
+{
+"prompt": "Reverse the string 'hello'"
+},
+...
+\]
 
-10  
-call me maybe Introduction to function calling in LLMs 
+10
+call me maybe Introduction to function calling in LLMs
 
-*•* functions\_definition.json: contains the available functions your system can call. Each function includes: 
+*•* functions\_definition.json: contains the available functions your system can call. Each function includes:
 
-*◦* Function name 
+*◦* Function name
 
-*◦* Argument names and types 
+*◦* Argument names and types
 
-*◦* Return type 
+*◦* Return type
 
-*◦* Description 
+*◦* Description
 
-Example: functions\_definition.json 
+Example: functions\_definition.json
 
-\[   
-{   
-"name": "fn\_add\_numbers",   
-"description": "Add two numbers together and return their sum.",   
-"parameters": {   
-"a": {   
-"type": "number"   
-},   
-"b": {   
-"type": "number"   
-}   
-},   
-"returns": {   
-"type": "number"   
-}   
-},   
-{   
-"name": "fn\_greet",   
-"description": "Generate a greeting message for a person by name.",   
-"parameters": {   
-"name": {   
-"type": "string"   
-}   
-},   
-"returns": {   
-"type": "string"   
-}   
-},   
-{   
-"name": "fn\_reverse\_string",   
-"description": "Reverse a string and return the reversed result.",   
-"parameters": {   
-"s": {   
-"type": "string"   
-}   
-},   
-"returns": {   
-"type": "string"   
-}   
-},   
-...   
-\] 
+\[
+{
+"name": "fn\_add\_numbers",
+"description": "Add two numbers together and return their sum.",
+"parameters": {
+"a": {
+"type": "number"
+},
+"b": {
+"type": "number"
+}
+},
+"returns": {
+"type": "number"
+}
+},
+{
+"name": "fn\_greet",
+"description": "Generate a greeting message for a person by name.",
+"parameters": {
+"name": {
+"type": "string"
+}
+},
+"returns": {
+"type": "string"
+}
+},
+{
+"name": "fn\_reverse\_string",
+"description": "Reverse a string and return the reversed result.",
+"parameters": {
+"s": {
+"type": "string"
+}
+},
+"returns": {
+"type": "string"
+}
+},
+...
+\]
 
-These examples establish the expected complexity level. However, your solution will be tested with different prompts and function 
+These examples establish the expected complexity level. However, your solution will be tested with different prompts and function
 
-sets. You must implement proper JSON error handling for input files, as they may contain invalid JSON or be missing entirely. 
+sets. You must implement proper JSON error handling for input files, as they may contain invalid JSON or be missing entirely.
 
-11  
-call me maybe Introduction to function calling in LLMs 
+11
+call me maybe Introduction to function calling in LLMs
 
-**V.3 LLM Interaction** 
+**V.3 LLM Interaction**
 
-**V.3.1 The LLM SDK** 
+**V.3.1 The LLM SDK**
 
-Attached to this project, you’ll find a wrapper class **Small\_LLM\_Model** in the llm\_sdk package that you can use to interact with the LLM. 
+Attached to this project, you’ll find a wrapper class **Small\_LLM\_Model** in the llm\_sdk package that you can use to interact with the LLM.
 
-The SDK provides several essential methods: 
+The SDK provides several essential methods:
 
-*•* get\_logits\_from\_input\_ids(input\_ids: List\[int\]) \-\> List\[float\] Takes a list of token IDs and returns the logits produced by the LLM model. 
+*•* get\_logits\_from\_input\_ids(input\_ids: List\[int\]) \-\> List\[float\] Takes a list of token IDs and returns the logits produced by the LLM model.
 
-*•* get\_path\_to\_vocab\_file() \-\> str 
+*•* get\_path\_to\_vocab\_file() \-\> str
 
-Returns the path to the vocabulary file containing the correspondence between token IDs and tokens. 
+Returns the path to the vocabulary file containing the correspondence between token IDs and tokens.
 
-*•* encode(text: str) \-\> Tensor 
+*•* encode(text: str) \-\> Tensor
 
-Encodes a text string into a tensor of token IDs using the model’s tokenizer. 
+Encodes a text string into a tensor of token IDs using the model’s tokenizer.
 
-*•* decode(token\_ids: List\[int\]) \-\> str *(optional)* 
+*•* decode(token\_ids: List\[int\]) \-\> str *(optional)*
 
-Optionally decodes a list of token IDs back into a text string. 
+Optionally decodes a list of token IDs back into a text string.
 
-**V.3.2 The Generation Pipeline** 
+**V.3.2 The Generation Pipeline**
 
-The LLM generation process follows these steps: 
+The LLM generation process follows these steps:
 
-1\. **Prompt**: Your natural language question 
+1\. **Prompt**: Your natural language question
 
-Example: *"What is the sum of 2 and 3?"* 
+Example: *"What is the sum of 2 and 3?"*
 
-2\. Tokenization: The text is broken into subword units (tokens). Unlike simple word splitting, tokenizers often include leading spaces, handle punctuation, and split words into smaller components using algorithms such as BPE or SentencePiece. Example (realistic): *\["What", "Gis ˙ ", "Gthe ˙ ", "Gsum ˙ ", "Gof ˙ ", "G2˙ ", "Gand ˙ ", "G3˙ ", "?"\]* Note: The symbol "˙G", indicates a preceding space; real tokenizers preserve such details to reconstruct text accurately. 
+2\. Tokenization: The text is broken into subword units (tokens). Unlike simple word splitting, tokenizers often include leading spaces, handle punctuation, and split words into smaller components using algorithms such as BPE or SentencePiece. Example (realistic): *\["What", "Gis ˙ ", "Gthe ˙ ", "Gsum ˙ ", "Gof ˙ ", "G2˙ ", "Gand ˙ ", "G3˙ ", "?"\]* Note: The symbol "˙G", indicates a preceding space; real tokenizers preserve such details to reconstruct text accurately.
 
-3\. **Input IDs**: Tokens are converted to numerical IDs the model understands. Example (illustrative): *\[892, 318, 262, 4771, 286, 16, 290, 17, 30\]* 
+3\. **Input IDs**: Tokens are converted to numerical IDs the model understands. Example (illustrative): *\[892, 318, 262, 4771, 286, 16, 290, 17, 30\]*
 
-4\. **LLM Processing**: The model processes these numbers through its neural network. 
+4\. **LLM Processing**: The model processes these numbers through its neural network.
 
-5\. **Logits**: The model outputs probability scores for each possible next token. Example: *token\_5: 0.001, token\_42: 0.85, token\_100: 0.02, ...* 
+5\. **Logits**: The model outputs probability scores for each possible next token. Example: *token\_5: 0.001, token\_42: 0.85, token\_100: 0.02, ...*
 
-6\. **Token Selection**: The next token is chosen based on these probabilities, usually the one with the highest score. 
+6\. **Token Selection**: The next token is chosen based on these probabilities, usually the one with the highest score.
 
-*At this stage, techniques like **constrained decoding** can be applied to restrict the token choices and ensure outputs follow a specific structure, such as generating 100% valid JSON.* 
+*At this stage, techniques like **constrained decoding** can be applied to restrict the token choices and ensure outputs follow a specific structure, such as generating 100% valid JSON.*
 
-12  
-call me maybe Introduction to function calling in LLMs 
+12
+call me maybe Introduction to function calling in LLMs
 
-**Important**: This process repeats token-by-token. Each generated token is added to the prompt, and steps 2-6 repeat until the complete response is generated. 
+**Important**: This process repeats token-by-token. Each generated token is added to the prompt, and steps 2-6 repeat until the complete response is generated.
 
-**Simplified view:** 
+**Simplified view:**
 
-Prompt \-\> Tokenization \-\> Input IDs \-\> LLM \-\> Logits \-\> Next Token Selection 
+Prompt \-\> Tokenization \-\> Input IDs \-\> LLM \-\> Logits \-\> Next Token Selection
 
-**V.3.3 Understanding Constrained Decoding** 
+**V.3.3 Understanding Constrained Decoding**
 
-Language models generate text one token at a time. At each step, the model produces a probability distribution (logits) over all possible next tokens. Normally, you would sample from this distribution or pick the highest probability token. 
+Language models generate text one token at a time. At each step, the model produces a probability distribution (logits) over all possible next tokens. Normally, you would sample from this distribution or pick the highest probability token.
 
-**Constrained decoding** intervenes in this process by modifying the logits *before* token selection: 
+**Constrained decoding** intervenes in this process by modifying the logits *before* token selection:
 
-1\. The model produces logits for all possible tokens. 
+1\. The model produces logits for all possible tokens.
 
-2\. You identify which tokens would maintain both a valid JSON structure *and com pliance with the expected schema*. 
+2\. You identify which tokens would maintain both a valid JSON structure *and com pliance with the expected schema*.
 
-3\. You set logits for invalid tokens (those breaking the schema or structure) to negative infinity. 
+3\. You set logits for invalid tokens (those breaking the schema or structure) to negative infinity.
 
-4\. You sample only from the remaining valid tokens. 
+4\. You sample only from the remaining valid tokens.
 
-In this project, constrained decoding must not only ensure syntactically valid JSON but also enforce a specific schema. For instance, if a field is constrained to a number in functions\_definition.json, the decoder restricts token selection to values satisfying either an integer or a float, preserving both JSON validity and schema compliance. This guarantees that every generated token maintains both structural and semantic validity, enforcing the required schema. As a result, the produced JSON is 100% retrievable and can always be parsed without errors. 
+In this project, constrained decoding must not only ensure syntactically valid JSON but also enforce a specific schema. For instance, if a field is constrained to a number in functions\_definition.json, the decoder restricts token selection to values satisfying either an integer or a float, preserving both JSON validity and schema compliance. This guarantees that every generated token maintains both structural and semantic validity, enforcing the required schema. As a result, the produced JSON is 100% retrievable and can always be parsed without errors.
 
-Your solution must NOT rely on the model spontaneously producing 
+Your solution must NOT rely on the model spontaneously producing
 
-correct JSON from a prompt. Prompting the model with function 
+correct JSON from a prompt. Prompting the model with function
 
-definitions and hoping for structured output is not reliable, and it is not the skill we expect you to develop here. 
+definitions and hoping for structured output is not reliable, and it is not the skill we expect you to develop here.
 
-Think about how you can use the vocabulary JSON file to map between tokens and their string representations. This is crucial for 
+Think about how you can use the vocabulary JSON file to map between tokens and their string representations. This is crucial for
 
-determining which tokens are valid at each generation step. 
+determining which tokens are valid at each generation step.
 
-13  
-call me maybe Introduction to function calling in LLMs 
+13
+call me maybe Introduction to function calling in LLMs
 
-**V.4 Output File Format** 
+**V.4 Output File Format**
 
-Your program will produce a single JSON file: data/output/function\_calling\_results.json. For each prompt, add a JSON object to this file. Each object in the array must contain exactly the following keys: 
+Your program will produce a single JSON file: data/output/function\_calling\_results.json. For each prompt, add a JSON object to this file. Each object in the array must contain exactly the following keys:
 
-*•* prompt (string): The original natural-language request 
+*•* prompt (string): The original natural-language request
 
-*•* name (string): The name of the function to call 
+*•* name (string): The name of the function to call
 
-*•* parameters (object): All required arguments with the correct types 
+*•* parameters (object): All required arguments with the correct types
 
-**V.4.1 Example Output** 
+**V.4.1 Example Output**
 
-\[   
-{   
-"prompt": "What is the sum of 2 and 3?",   
-"name": "fn\_add\_numbers",   
-"parameters": {"a": 2.0, "b": 3.0}   
-},   
-{   
-"prompt": "Reverse the string 'hello'",   
-"name": "fn\_reverse\_string",   
-"parameters": {"s": "hello"}   
-}   
-\] 
+\[
+{
+"prompt": "What is the sum of 2 and 3?",
+"name": "fn\_add\_numbers",
+"parameters": {"a": 2.0, "b": 3.0}
+},
+{
+"prompt": "Reverse the string 'hello'",
+"name": "fn\_reverse\_string",
+"parameters": {"s": "hello"}
+}
+\]
 
-**V.4.2 Validation Rules** 
+**V.4.2 Validation Rules**
 
-*•* The file must be valid JSON (no trailing commas, no comments) 
+*•* The file must be valid JSON (no trailing commas, no comments)
 
-*•* Keys and types must match the schema in functions\_definition.json exactly *•* No extra keys or prose are allowed anywhere in the output 
+*•* Keys and types must match the schema in functions\_definition.json exactly *•* No extra keys or prose are allowed anywhere in the output
 
-*•* All required arguments must be present 
+*•* All required arguments must be present
 
-*•* Argument types must match the function definition (number, string, boolean, etc.) 
+*•* Argument types must match the function definition (number, string, boolean, etc.)
 
-The given input files may change during the peer review. Do not 
+The given input files may change during the peer review. Do not
 
-hardcode solutions based on the provided examples. 
+hardcode solutions based on the provided examples.
 
-14  
-call me maybe Introduction to function calling in LLMs 
+14
+call me maybe Introduction to function calling in LLMs
 
-**V.5 Performance and Reliability** 
+**V.5 Performance and Reliability**
 
-Your implementation should achieve: 
+Your implementation should achieve:
 
-*•* **Near-perfect accuracy**: 90%+ correct function selection and argument extraction *•* **100% valid JSON**: Every output must be parseable and schema-compliant 
+*•* **Near-perfect accuracy**: 90%+ correct function selection and argument extraction *•* **100% valid JSON**: Every output must be parseable and schema-compliant
 
-*•* **Reasonable speed**: Process all test prompts in under 5 minutes on standard hardware 
+*•* **Reasonable speed**: Process all test prompts in under 5 minutes on standard hardware
 
-*•* **Robust error handling**: Gracefully handle malformed inputs, missing files, and edge cases 
+*•* **Robust error handling**: Gracefully handle malformed inputs, missing files, and edge cases
 
-The Qwen3-0.6B model has only 500 million parameters, yet with proper 
+The Qwen3-0.6B model has only 500 million parameters, yet with proper
 
-constrained decoding, it can achieve reliability comparable to much 
+constrained decoding, it can achieve reliability comparable to much
 
-larger models. This demonstrates the power of structural guidance 
+larger models. This demonstrates the power of structural guidance
 
-over raw model size. 
+over raw model size.
 
-**V.6 Testing Your Implementation** 
+**V.6 Testing Your Implementation**
 
-To verify your solution works correctly: 
+To verify your solution works correctly:
 
-1\. Ensure input files are in the data/input/ directory 
+1\. Ensure input files are in the data/input/ directory
 
-2\. Run: uv run python \-m src \[–functions\_definition \<function\_definition\_file\>\] \[–input \<input\_file\>\] \[–output \<output\_file\>\] 
+2\. Run: uv run python \-m src \[–functions\_definition \<function\_definition\_file\>\] \[–input \<input\_file\>\] \[–output \<output\_file\>\]
 
-3\. Check that output/function\_calling\_results.json is created 
+3\. Check that output/function\_calling\_results.json is created
 
-4\. Validate the JSON structure and content 
+4\. Validate the JSON structure and content
 
-5\. Verify function names and argument types match the definitions 
+5\. Verify function names and argument types match the definitions
 
-Test with various edge cases: empty strings, large numbers, special 
+Test with various edge cases: empty strings, large numbers, special
 
-characters, wrong types, ambiguous prompts, and functions with 
+characters, wrong types, ambiguous prompts, and functions with
 
-multiple parameters. 
+multiple parameters.
 
-15  
-**Chapter VI** 
+15
+**Chapter VI**
 
-**Readme Requirements** 
+**Readme Requirements**
 
-A README.md file must be provided at the root of your Git repository. Its purpose is to allow anyone unfamiliar with the project (peers, staff, recruiters, etc.) to quickly understand what the project is about, how to run it, and where to find more information on the topic. 
+A README.md file must be provided at the root of your Git repository. Its purpose is to allow anyone unfamiliar with the project (peers, staff, recruiters, etc.) to quickly understand what the project is about, how to run it, and where to find more information on the topic.
 
-The README.md must include at least: 
+The README.md must include at least:
 
-*•* The very first line must be italicized and read: *This project has been created as part of the 42 curriculum by \<login1\>\[, \<login2\>\[, \<login3\>\[...\]\]\].* 
+*•* The very first line must be italicized and read: *This project has been created as part of the 42 curriculum by \<login1\>\[, \<login2\>\[, \<login3\>\[...\]\]\].*
 
-*•* A “**Description**” section that clearly presents the project, including its goal and a brief overview. 
+*•* A “**Description**” section that clearly presents the project, including its goal and a brief overview.
 
-*•* An “**Instructions**” section containing any relevant information about compilation, installation, and/or execution. 
+*•* An “**Instructions**” section containing any relevant information about compilation, installation, and/or execution.
 
-*•* A “**Resources**” section listing classic references related to the topic (documen tation, articles, tutorials, etc.), as well as a description of how AI was used — specifying for which tasks and which parts of the project. 
+*•* A “**Resources**” section listing classic references related to the topic (documen tation, articles, tutorials, etc.), as well as a description of how AI was used — specifying for which tasks and which parts of the project.
 
-➠ **Additional sections may be required depending on the project** (e.g., usage examples, feature list, technical choices, etc.). 
+➠ **Additional sections may be required depending on the project** (e.g., usage examples, feature list, technical choices, etc.).
 
-*Any required additions will be explicitly listed below.* 
+*Any required additions will be explicitly listed below.*
 
-For this project, the README.md must also include: 
+For this project, the README.md must also include:
 
-*•* **Algorithm explanation**: Describe your constrained decoding approach in detail *•* **Design decisions**: Explain key choices in your implementation *•* **Performance analysis**: Discuss accuracy, speed, and reliability of your solution *•* **Challenges faced**: Document difficulties encountered and how you solved them *•* **Testing strategy**: Describe how you validated your implementation *•* **Example usage**: Provide clear examples of running your program 
+*•* **Algorithm explanation**: Describe your constrained decoding approach in detail *•* **Design decisions**: Explain key choices in your implementation *•* **Performance analysis**: Discuss accuracy, speed, and reliability of your solution *•* **Challenges faced**: Document difficulties encountered and how you solved them *•* **Testing strategy**: Describe how you validated your implementation *•* **Example usage**: Provide clear examples of running your program
 
-16  
-call me maybe Introduction to function calling in LLMs Your README must be written in English. 
+16
+call me maybe Introduction to function calling in LLMs Your README must be written in English.
 
-17  
-**Chapter VII** 
+17
+**Chapter VII**
 
-**Bonus Part** 
+**Bonus Part**
 
-Check for bonus features (optional, not required for passing): 
+Check for bonus features (optional, not required for passing):
 
-*•* Support for multiple LLM models beyond Qwen/Qwen3-0.6B 
+*•* Support for multiple LLM models beyond Qwen/Qwen3-0.6B
 
-*•* Recoding the tokenizer: avoiding direct use of encode and decode in the main code, instead using get\_logits\_from\_input\_ids and get\_path\_to\_vocab\_file 
+*•* Recoding the tokenizer: avoiding direct use of encode and decode in the main code, instead using get\_logits\_from\_input\_ids and get\_path\_to\_vocab\_file
 
-*•* Advanced error recovery mechanisms 
+*•* Advanced error recovery mechanisms
 
-*•* Performance optimizations (caching, batching) 
+*•* Performance optimizations (caching, batching)
 
-*•* Comprehensive test suite 
+*•* Comprehensive test suite
 
-*•* Visualization of the generation process 
+*•* Visualization of the generation process
 
-*•* Support for complex nested function arguments 
+*•* Support for complex nested function arguments
 
-*•* Public implementation of tokenizer encode and optional decode methods *•* Demonstration of how encoding and decoding integrate with constrained decoding 
+*•* Public implementation of tokenizer encode and optional decode methods *•* Demonstration of how encoding and decoding integrate with constrained decoding
 
-Bonus features must be implemented and working — not just described in the README.md. You may be asked to demonstrate them during evaluation. 
+Bonus features must be implemented and working — not just described in the README.md. You may be asked to demonstrate them during evaluation.
 
-18  
-**Chapter VIII** 
+18
+**Chapter VIII**
 
-**Submission and peer review** 
+**Submission and peer review**
 
-Submit your assignment in your Git repository as usual. Only the work inside your repository will be reviewed during the defense. Don’t hesitate to double-check the names of your files to ensure they are correct. 
+Submit your assignment in your Git repository as usual. Only the work inside your repository will be reviewed during the defense. Don’t hesitate to double-check the names of your files to ensure they are correct.
 
-Your repository must contain: 
+Your repository must contain:
 
-*•* src/ directory with your implementation 
+*•* src/ directory with your implementation
 
-*•* pyproject.toml and uv.lock for dependency management 
+*•* pyproject.toml and uv.lock for dependency management
 
-*•* llm\_sdk/ directory (copied from the provided package) 
+*•* llm\_sdk/ directory (copied from the provided package)
 
-*•* data/input/ directory with test files (for demonstration) 
+*•* data/input/ directory with test files (for demonstration)
 
-*•* README.md with comprehensive documentation 
+*•* README.md with comprehensive documentation
 
-*•* Any additional files needed to run your solution 
+*•* Any additional files needed to run your solution
 
-Do not include the output/ directory in your repository. It will be generated during the peer review. 
+Do not include the output/ directory in your repository. It will be generated during the peer review.
 
-During the evaluation, a brief **modification of the project** may occasionally be re quested. This could involve a minor behaviour change, a few lines of code to write or rewrite, or an easy-to-add feature. 
+During the evaluation, a brief **modification of the project** may occasionally be re quested. This could involve a minor behaviour change, a few lines of code to write or rewrite, or an easy-to-add feature.
 
-While this step may **not be applicable to every project**, you must be prepared for it if it is mentioned in the evaluation guidelines. 
+While this step may **not be applicable to every project**, you must be prepared for it if it is mentioned in the evaluation guidelines.
 
-This step is meant to verify your actual understanding of a specific part of the project. The modification can be performed in any development environment you choose (e.g., your usual setup), and it should be feasible within a few minutes — unless a specific time frame is defined as part of the evaluation. 
+This step is meant to verify your actual understanding of a specific part of the project. The modification can be performed in any development environment you choose (e.g., your usual setup), and it should be feasible within a few minutes — unless a specific time frame is defined as part of the evaluation.
 
-19  
-call me maybe Introduction to function calling in LLMs 
+19
+call me maybe Introduction to function calling in LLMs
 
-You can, for example, be asked to make a small update to a function or script, modify a display, or adjust a data structure to store new information, etc. 
+You can, for example, be asked to make a small update to a function or script, modify a display, or adjust a data structure to store new information, etc.
 
-The details (scope, target, etc.) will be specified in the **evaluation guidelines** and may vary from one evaluation to another for the same project. 
+The details (scope, target, etc.) will be specified in the **evaluation guidelines** and may vary from one evaluation to another for the same project.
 
 20
