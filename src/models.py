@@ -1,9 +1,12 @@
 from pydantic import BaseModel, Field
 from typing import Literal
-from enum import Enum
 from typing import Any, Dict, List
 
-JSONState = Literal["START", "EXPECT_KEY", "EXPECT_COLON", "EXPECT_VALUE", "EXPECT_SEPARATOR", "DONE"]
+JSONState = Literal[
+    "START", "EXPECT_KEY", "EXPECT_COLON",
+    "EXPECT_VALUE", "EXPECT_SEPARATOR", "DONE"
+]
+
 
 class PromptModel(BaseModel):
 
@@ -25,6 +28,7 @@ class FunctionDefinition(BaseModel):
 
 class JSONStateMachine(BaseModel):
     """Tracks the structural parsing state and expected schema definitions."""
+
     current_state: JSONState = "START"
     expected_keys: List[str] = Field(default_factory=list)
     required_types: Dict[str, str] = Field(default_factory=dict)
@@ -37,7 +41,7 @@ class JSONStateMachine(BaseModel):
         self.buffer += next_token
 
         if self.current_state == "START":
-            if '{' in self.buffer:
+            if "{" in self.buffer:
                 self.current_state = "EXPECT_KEY"
                 i = self.buffer.index("{")
                 self.buffer = self.buffer[i + 1:]
@@ -69,25 +73,41 @@ class JSONStateMachine(BaseModel):
             if expected_type == "string":
                 if self.buffer.count('"') >= 2:
                     first_quote = self.buffer.index('"')
-                    sec_quote = self.buffer.index('"', first_quote + 1)
-                    sliced_val = self.buffer[first_quote + 1:sec_quote].replace("Ġ", " ")
+                    sec_quote = self.buffer.index(
+                        '"', first_quote + 1
+                    )
+                    sliced_val = (
+                        self.buffer[first_quote + 1: sec_quote]
+                        .replace("Ġ", " ")
+                    )
                     self.parsed_data[self.current_key] = sliced_val
                     self.seen_keys.append(self.current_key)
 
                     remainder = self.buffer[sec_quote + 1:]
 
-                    comma_i = remainder.index(",") if "," in remainder else None
-                    brace_i = remainder.index("}") if "}" in remainder else None
+                    comma_i = (
+                        remainder.index(",") if "," in remainder else None
+                    )
+                    brace_i = (
+                        remainder.index("}") if "}" in remainder else None
+                    )
 
-                    if comma_i is not None and (brace_i is None or comma_i < brace_i):
-                        # delimiter already present in this token — consume it directly
+                    if comma_i is not None and (
+                        brace_i is None or comma_i < brace_i
+                    ):
+                        # delimiter already present in this token
+                        # — consume it directly
                         self.buffer = remainder[comma_i + 1:]
                         self.current_key = ""
                         self.current_state = "EXPECT_KEY"
                     elif brace_i is not None:
-                        missing_keys = set(self.expected_keys) - set(self.seen_keys)
+                        missing_keys = (
+                            set(self.expected_keys) - set(self.seen_keys)
+                        )
                         if missing_keys:
-                            raise ValueError(f"Missing required keys: {missing_keys}")
+                            raise ValueError(
+                                f"Missing required keys: {missing_keys}"
+                            )
                         self.buffer = remainder[brace_i + 1:]
                         self.current_state = "DONE"
                     else:
@@ -98,11 +118,18 @@ class JSONStateMachine(BaseModel):
 
             elif expected_type in ["number", "integer", "boolean", "null"]:
                 if "," in self.buffer or "}" in self.buffer:
-                    comma_i = self.buffer.index(",") if "," in self.buffer else None
-                    brace_i = self.buffer.index("}") if "}" in self.buffer else None
-                    if comma_i is not None and (brace_i is None or comma_i < brace_i):
+                    comma_i = (
+                        self.buffer.index(",") if "," in self.buffer else None
+                    )
+                    brace_i = (
+                        self.buffer.index("}") if "}" in self.buffer else None
+                    )
+                    if comma_i is not None and (
+                        brace_i is None or comma_i < brace_i
+                    ):
                         end_i, found_char = comma_i, ","
                     else:
+                        assert brace_i is not None
                         end_i, found_char = brace_i, "}"
 
                     raw_val = self.buffer[:end_i].strip()
@@ -112,9 +139,16 @@ class JSONStateMachine(BaseModel):
                             try:
                                 value = float(raw_val)
                             except ValueError:
-                                raise ValueError(f"Cannot parse '{raw_val}' as {expected_type}")
+                                raise ValueError(
+                                    f"Cannot parse '{raw_val}' "
+                                    f"as {expected_type}"
+                                )
                         else:
-                            value = int(raw_val) if "." not in raw_val else float(raw_val)
+                            value = (
+                                int(raw_val)
+                                if "." not in raw_val
+                                else float(raw_val)
+                            )
                     elif expected_type == "boolean":
                         value = raw_val == "true"
 
@@ -124,27 +158,38 @@ class JSONStateMachine(BaseModel):
 
                     if found_char == ",":
                         self.current_key = ""
-                        self.current_state = "EXPECT_KEY"   # FIXED: skip EXPECT_SEPARATOR
+                        self.current_state = (
+                            "EXPECT_KEY"  # FIXED: skip EXPECT_SEPARATOR
+                        )
                     else:
-                        missing_keys = set(self.expected_keys) - set(self.seen_keys)
+                        missing_keys = (
+                            set(self.expected_keys) - set(self.seen_keys)
+                        )
                         if missing_keys:
-                            raise ValueError(f"Missing required keys: {missing_keys}")
-                        self.current_state = "DONE"          # FIXED: skip EXPECT_SEPARATOR
+                            raise ValueError(
+                                f"Missing required keys: {missing_keys}"
+                            )
+                        self.current_state = (  # FIXED: skip EXPECT_SEPARATOR
+                            "DONE"
+                        )
                     return
         elif self.current_state == "EXPECT_SEPARATOR":
             if "," in self.buffer:
-                i = self.buffer.index(',')
+                i = self.buffer.index(",")
                 self.buffer = self.buffer[i + 1:]
                 self.current_state = "EXPECT_KEY"
                 return
             elif "}" in self.buffer:
-                missing_keys = set(self.expected_keys) - set(self.seen_keys)
+                missing_keys = (
+                    set(self.expected_keys) - set(self.seen_keys)
+                )
                 if missing_keys:
-                    raise ValueError(f"Missing required keys: {missing_keys}")
+                    raise ValueError(
+                        f"Missing required keys: {missing_keys}"
+                    )
                 self.buffer = ""
                 self.current_state = "DONE"
                 return
-
 
     @classmethod
     def from_schema(cls, schema_dict: Dict[str, Any]) -> "JSONStateMachine":
@@ -171,7 +216,5 @@ class JSONStateMachine(BaseModel):
             expected_keys=expected_keys,
             required_types=required_types,
             seen_keys=[],
-            buffer=""
+            buffer="",
         )
-
-

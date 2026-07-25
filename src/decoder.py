@@ -1,16 +1,18 @@
 """Constrained decoding for structured JSON generation."""
+
 import numpy as np
 from .models import JSONStateMachine
 from llm_sdk.llm_sdk import Small_LLM_Model
 from typing import Dict, List, Any
 from .utils import build_prompt
 
+
 def generate_constrained_json(
     prompt: str,
     model: Small_LLM_Model,
     vocab: Dict[int, str],
     schema: Dict[str, Dict[str, Any]],
-    valid_names: List[str]
+    valid_names: List[str],
 ) -> Dict[str, Any]:
     """Generate constrained JSON function call from natural language prompt.
 
@@ -26,9 +28,12 @@ def generate_constrained_json(
         valid_names: List of available function names to select from.
 
     Returns:
-        Dict with keys "name" (function name) and "parameters" (parsed args dict).
+        Dict with keys "name" (function name) and
+        "parameters" (parsed args dict).
     """
-    full_prompt = build_prompt(prompt, list(schema.values()))
+    full_prompt = build_prompt(
+        prompt, list(schema.values())
+    )
     inputs = model.encode(full_prompt)
     input_ids = inputs[0].tolist()
 
@@ -40,19 +45,16 @@ def generate_constrained_json(
     for _ in range(max_steps):
         ids_logits = model.get_logits_from_input_ids(input_ids)
         filtered_logits = filter_tokens(
-            ids_logits,
-            state,
-            vocab,
-            phase,
-            current_buffer,
-            valid_names
+            ids_logits, state, vocab, phase, current_buffer, valid_names
         )
         if np.isneginf(filtered_logits).all():
-            # FIXED: raise instead of silently breaking with partial/wrong output
+            # FIXED: raise instead of silently breaking with
+            # partial/wrong output
             raise RuntimeError(
                 f"All tokens masked — phase={phase}, "
                 f"state={state.current_state if state else None}, "
-                f"buffer={state.buffer if state else current_buffer!r}"
+                f"buffer="
+                f"{state.buffer if state else current_buffer!r}"
             )
         next_token_id = int(np.argmax(filtered_logits))
         input_ids.append(next_token_id)
@@ -63,8 +65,18 @@ def generate_constrained_json(
                 selected_function_name = current_buffer
                 selected_schema = schema[selected_function_name]
                 state = JSONStateMachine.from_schema(selected_schema)
-                phase = "PARAMETER_GENERATION"
                 current_buffer = ""
+
+                if not state.expected_keys:
+                    # Zero-parameter function: skip PARAMETER_GENERATION
+                    # entirely — there is no valid key for EXPECT_KEY to
+                    # offer, so entering that state would mask every
+                    # token and crash.
+                    state.parsed_data = {}
+                    state.current_state = "DONE"
+                    break
+
+                phase = "PARAMETER_GENERATION"
 
         elif phase == "PARAMETER_GENERATION" and state is not None:
             try:
@@ -75,21 +87,21 @@ def generate_constrained_json(
                 break
 
     if selected_function_name is None:
-         raise RuntimeError("Model failed to select a valid function name")
+        raise RuntimeError("Model failed to select a valid function name")
 
     return {
         "name": selected_function_name or "",
-        "parameters": state.parsed_data if state is not None else {}
+        "parameters": state.parsed_data if state is not None else {},
     }
 
 
 def filter_tokens(
-    logits: np.ndarray,
+    logits: np.ndarray | list[float],
     state: JSONStateMachine | None,
     vocab: Dict[int, str],
     phase: str,
     current_buffer: str,
-    valid_names: List[str]
+    valid_names: List[str],
 ) -> np.ndarray:
     """Filter logits to only valid tokens for current phase and state.
 
@@ -109,7 +121,7 @@ def filter_tokens(
 
     all_ids = set(range(len(logits)))
     known_ids = set(int(tid) for tid in vocab.keys())
-    wrong_ids |= (all_ids - known_ids)
+    wrong_ids |= all_ids - known_ids
     if phase == "FUNCTION_SELECTION":
         for token_id, token_txt in vocab.items():
             tid = int(token_id)
@@ -118,10 +130,10 @@ def filter_tokens(
                 wrong_ids.add(tid)
                 continue
             potential_str = current_buffer + ttxt
-            # Check if this potential string is a prefix of any valid function name
+            # Check if this potential string is a prefix of any
+            # valid function name
             is_valid = any(
-                target.startswith(potential_str)
-                for target in valid_names
+                target.startswith(potential_str) for target in valid_names
             )
             if not is_valid:
                 wrong_ids.add(tid)
@@ -160,7 +172,7 @@ def filter_tokens(
                 expected_type = state.required_types.get(state.current_key)
 
                 if expected_type == "string":
-                    if state.buffer.strip() == "" and '"' not in ttxt:
+                    if state.buffer.strip() == "" and '"' not in ttxt:  # noqa: E501
                         wrong_ids.add(tid)
                         continue
                     candidate = state.buffer + ttxt
@@ -170,20 +182,25 @@ def filter_tokens(
                         after_closing = candidate[second_q + 1:]
 
                         remaining_keys = [
-                            k for k in state.expected_keys
-                            if k not in state.seen_keys and k != state.current_key
+                            k
+                            for k in state.expected_keys
+                            if k not in state.seen_keys
+                            and k != state.current_key
                         ]
                         allowed = "," if remaining_keys else "}"
                         allowed += " \n"
 
-                        if after_closing.strip() and not all(c in allowed for c in after_closing):
+                        if after_closing.strip() and not all(
+                            c in allowed for c in after_closing
+                        ):
                             wrong_ids.add(tid)
 
                 elif expected_type in ["number", "integer"]:
                     digit_chars = "0123456789.-"
                     has_digits = any(c.isdigit() for c in state.buffer.strip())
                     remaining_keys = [
-                        k for k in state.expected_keys
+                        k
+                        for k in state.expected_keys
                         if k not in state.seen_keys and k != state.current_key
                     ]
                     allowed_separators = "," if remaining_keys else "}"
@@ -197,7 +214,6 @@ def filter_tokens(
                         wrong_ids.add(tid)
                         break
 
-
                 elif expected_type == "boolean":
                     value_so_far = state.buffer.strip()
                     potential_str = value_so_far + ttxt
@@ -210,10 +226,14 @@ def filter_tokens(
                         wrong_ids.add(tid)
 
             elif state.current_state == "EXPECT_SEPARATOR":
-                remaining_keys = [k for k in state.expected_keys if k not in state.seen_keys]
+                remaining_keys = [
+                    k for k in state.expected_keys if k not in state.seen_keys
+                ]
                 allowed = "," if remaining_keys else "}"
                 allowed += " \n"
-                if not all(ch in allowed for ch in ttxt):
+                if not all(
+                    ch in allowed for ch in ttxt
+                ):
                     wrong_ids.add(tid)
 
     if wrong_ids:

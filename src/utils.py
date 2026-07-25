@@ -3,9 +3,7 @@
 import json
 from pathlib import Path
 from typing import List, Dict, Any
-
 from pydantic import ValidationError
-
 from .models import PromptModel, FunctionDefinition
 from llm_sdk.llm_sdk import Small_LLM_Model
 
@@ -22,16 +20,19 @@ def load_prompts(file_path: str) -> List[Dict[str, Any]]:
     """
     path = Path(file_path)
 
-    if path.suffix.lower() != '.json':
+    if path.suffix.lower() != ".json":
         print(f"Error: The file '{file_path}' must have a .json extension.")
         return []
 
     try:
-        with open(path, 'r', encoding='utf-8') as file:
+        with open(path, "r", encoding="utf-8") as file:
             try:
                 data = json.load(file)
             except json.JSONDecodeError:
-                print(f"Error: The file '{file_path}' contains invalid JSON syntax.")
+                print(
+                    f"Error: The file '{file_path}' "
+                    "contains invalid JSON syntax."
+                )
                 return []
     except FileNotFoundError:
         print(f"Error: The file '{file_path}' was not found.")
@@ -46,12 +47,18 @@ def load_prompts(file_path: str) -> List[Dict[str, Any]]:
         for item in data:
             if isinstance(item, dict):
                 prompt_model = PromptModel(**item)
-                validated_prompts.append(prompt_model.dict())
+                validated_prompts.append(prompt_model.model_dump())
             else:
-                print(f"Error: Invalid item format in '{file_path}'. Expected dictionary.")
+                print(
+                    f"Error: Invalid item format in '{file_path}'."
+                    " Expected dictionary."
+                )
                 return []
     except ValidationError as e:
-        print(f"Error: Pydantic validation failed for prompts in '{file_path}':\n{e}")
+        print(
+            f"Error: Pydantic validation failed for prompts "
+            f"in '{file_path}':\n{e}"
+        )
         return []
 
     return validated_prompts
@@ -69,16 +76,19 @@ def load_functions(file_path: str) -> List[Dict[str, Any]]:
     """
     path = Path(file_path)
 
-    if path.suffix.lower() != '.json':
+    if path.suffix.lower() != ".json":
         print(f"Error: The file '{file_path}' must have a .json extension.")
         return []
 
     try:
-        with open(path, 'r', encoding='utf-8') as file:
+        with open(path, "r", encoding="utf-8") as file:
             try:
                 data = json.load(file)
             except json.JSONDecodeError:
-                print(f"Error: The file '{file_path}' contains invalid JSON syntax.")
+                print(
+                    f"Error: The file '{file_path}' "
+                    "contains invalid JSON syntax."
+                )
                 return []
     except FileNotFoundError:
         print(f"Error: The file '{file_path}' was not found.")
@@ -93,12 +103,18 @@ def load_functions(file_path: str) -> List[Dict[str, Any]]:
         for item in data:
             if isinstance(item, dict):
                 func_def = FunctionDefinition(**item)
-                validated_functions.append(func_def.dict())
+                validated_functions.append(func_def.model_dump())
             else:
-                print(f"Error: Invalid item format in '{file_path}'. Expected dictionary.")
+                print(
+                    f"Error: Invalid item format in '{file_path}'."
+                    " Expected dictionary."
+                )
                 return []
     except ValidationError as e:
-        print(f"Error: Pydantic validation failed for functions in '{file_path}':\n{e}")
+        print(
+            f"Error: Pydantic validation failed for functions "
+            f"in '{file_path}':\n{e}"
+        )
         return []
 
     return validated_functions
@@ -126,7 +142,6 @@ def load_vocab(model: Small_LLM_Model) -> dict[int, str]:
     return {token_id: token_str for token_str, token_id in raw_vocab.items()}
 
 
-
 def build_prompt(user_prompt: str, functions: List[Dict[str, Any]]) -> str:
     """Construct a prompt that gives the model context on available functions.
 
@@ -144,7 +159,7 @@ def build_prompt(user_prompt: str, functions: List[Dict[str, Any]]) -> str:
         param_names = ", ".join(f["parameters"].keys())
         lines.append(
             f'- "{f["name"]}": {f["description"]} '
-            f'(parameters: {param_names})'
+            f"(parameters: {param_names})"
         )
     functions_desc = "\n".join(lines)
 
@@ -156,7 +171,8 @@ def build_prompt(user_prompt: str, functions: List[Dict[str, Any]]) -> str:
         '{"name": "<function_name>", "parameters": {...}}\n\n'
         "Example:\n"
         "User request: Greet mary\n"
-        'Function call: {"name": "fn_greet", "parameters": {"name": "mary"}}\n\n'
+        'Function call: {"name": "fn_greet", '
+        '"parameters": {"name": "mary"}}\n\n'
         f"User request: {user_prompt}\n"
         "Function call:"
     )

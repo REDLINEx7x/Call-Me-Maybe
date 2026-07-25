@@ -58,6 +58,9 @@ uv run python -m src \
 ### Linting
 ```bash
 make lint
+
+make lint-strict
+
 ```
 
 ## Algorithm Explanation

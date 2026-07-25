@@ -1,11 +1,13 @@
-import sys
 import argparse
-from .utils import load_functions, load_prompts, load_vocab, build_prompt
+from .utils import (
+    load_functions,
+    load_prompts,
+    load_vocab,
+)
 from llm_sdk.llm_sdk import Small_LLM_Model
 from .decoder import generate_constrained_json
 import json
 from pathlib import Path
-
 
 
 def main() -> None:
@@ -23,19 +25,19 @@ def main() -> None:
         "--functions_definition",
         type=str,
         default="data/input/functions_definition.json",
-        help="Path to function definitions JSON file"
+        help="Path to function definitions JSON file",
     )
     parser.add_argument(
         "--input",
         type=str,
         default="data/input/function_calling_tests.json",
-        help="Path to input prompts JSON file"
+        help="Path to input prompts JSON file",
     )
     parser.add_argument(
         "--output",
         type=str,
         default="data/output/function_calling_results.json",
-        help="Path to output results JSON file"
+        help="Path to output results JSON file",
     )
     args = parser.parse_args()
     try:
@@ -45,38 +47,38 @@ def main() -> None:
         print(f"Error loading model or vocab: {e}")
         return
 
-        validated_prompts = load_prompts(args.input)
-        validated_functions = load_functions(args.functions_definition)
+    validated_prompts = load_prompts(args.input)
+    validated_functions = load_functions(args.functions_definition)
 
-        if not validated_functions or not validated_prompts:
-            print("Error: No valid prompts or functions loaded.")
-            return
+    if not validated_functions or not validated_prompts:
+        print("Error: No valid prompts or functions loaded.")
+        return
 
     valid_function_names = [func.get("name") for func in validated_functions]
     schema_dict = {func.get("name"): func for func in validated_functions}
 
     # Process each prompt
     for idx, prompt in enumerate(validated_prompts, 1):
-        print(f"[{idx}/{len(validated_prompts)}] processing: {prompt.get('prompt', '')}")
+        print(
+            f"[{idx}/{len(validated_prompts)}] processing: "
+            f"{prompt.get('prompt', '')}"
+        )
         text_prompt = prompt.get("prompt", "")
         if not text_prompt:
             continue
 
         try:
-            # Generate constrained JSON (returns {"name": "...", "parameters": {...}})
+            # Generate constrained JSON
+            # (returns {"name": "...", "parameters": {...}})
             result = generate_constrained_json(
-                text_prompt,
-                model,
-                vocab,
-                schema_dict,
-                valid_function_names
+                text_prompt, model, vocab, schema_dict, valid_function_names
             )
 
             # Format output with original prompt
             output_item = {
                 "prompt": text_prompt,
                 "name": result.get("name", ""),
-                "parameters": result.get("parameters", {})
+                "parameters": result.get("parameters", {}),
             }
             all_answers.append(output_item)
             print(f"[{idx}/{len(validated_prompts)}] done")
