@@ -150,9 +150,10 @@ def build_prompt(user_prompt: str, functions: List[Dict[str, Any]]) -> str:
         functions: The list of available function definitions.
 
     Returns:
-        A prompt string describing available functions, a worked example,
+        A prompt string describing available functions, worked examples,
         and the user request — formatted to steer the model toward
-        correct JSON-style output with values extracted from the request.
+        correct JSON-style output with values extracted or synthesized
+        from the request as appropriate.
     """
     lines = []
     for f in functions:
@@ -169,10 +170,18 @@ def build_prompt(user_prompt: str, functions: List[Dict[str, Any]]) -> str:
         f"Available functions:\n{functions_desc}\n\n"
         "Respond only with JSON in this exact shape: "
         '{"name": "<function_name>", "parameters": {...}}\n\n'
-        "Example:\n"
+        "Example 1 (copy a value directly from the request):\n"
         "User request: Greet mary\n"
         'Function call: {"name": "fn_greet", '
         '"parameters": {"name": "mary"}}\n\n'
+        "Example 2 (synthesize a pattern, not just copy a literal "
+        "substring — a regex must match the whole category described, "
+        "not one instance of it):\n"
+        "User request: Replace every uppercase letter in 'Hello World' "
+        "with an underscore\n"
+        'Function call: {"name": "fn_substitute_string_with_regex", '
+        '"parameters": {"source_string": "Hello World", '
+        '"regex": "[A-Z]", "replacement": "_"}}\n\n'
         f"User request: {user_prompt}\n"
         "Function call:"
     )
