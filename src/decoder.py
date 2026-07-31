@@ -219,10 +219,16 @@ def filter_tokens(
                     potential_str = value_so_far + ttxt
                     # FIXED: real prefix matching, not character-set membership
                     is_valid = any(
-                        candidate.startswith(potential_str)
-                        for candidate in ["true", "false"]
+                        c.startswith(potential_str)
+                        for c in ["true", "false"]
                     )
                     if not is_valid:
+                        wrong_ids.add(tid)
+                elif expected_type == "null":
+                    value =  state.buffer.strip()
+                    potential_str = value + ttxt
+
+                    if not "null".startswith(potential_str):
                         wrong_ids.add(tid)
 
             elif state.current_state == "EXPECT_SEPARATOR":

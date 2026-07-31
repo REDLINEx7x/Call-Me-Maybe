@@ -151,7 +151,9 @@ class JSONStateMachine(BaseModel):
                             )
                     elif expected_type == "boolean":
                         value = raw_val == "true"
-
+                    elif expected_type == "null":
+                        value = None
+                        
                     self.parsed_data[self.current_key] = value
                     self.seen_keys.append(self.current_key)
                     self.buffer = self.buffer[end_i + 1:]
