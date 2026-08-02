@@ -37,19 +37,22 @@ def generate_constrained_json(
     inputs = model.encode(full_prompt)
     input_ids = inputs[0].tolist()
 
-    state = None  # Will be initialized after function selection
+    state = None
     phase = "FUNCTION_SELECTION"
     current_buffer = ""
     selected_function_name = None
     max_steps = 300
+    STALL_LIMIT = 50
+    steps_in_current_state = 0
+    last_state = None
     for _ in range(max_steps):
+
+
         ids_logits = model.get_logits_from_input_ids(input_ids)
         filtered_logits = filter_tokens(
             ids_logits, state, vocab, phase, current_buffer, valid_names
         )
         if np.isneginf(filtered_logits).all():
-            # FIXED: raise instead of silently breaking with
-            # partial/wrong output
             raise RuntimeError(
                 f"All tokens masked — phase={phase}, "
                 f"state={state.current_state if state else None}, "
@@ -85,6 +88,25 @@ def generate_constrained_json(
                 raise RuntimeError(f"State machine error: {e}") from e
             if state.current_state == "DONE":
                 break
+
+
+        if phase == "PARAMETER_GENERATION" and state is not None:
+            if state.current_state == last_state:
+                steps_in_current_state += 1
+            else:
+                steps_in_current_state = 0
+                last_state = state.current_state
+            if steps_in_current_state > STALL_LIMIT:  # e.g. 40
+                raise RuntimeError(
+                    f"Stalled in state={state.current_state} for "
+                    f"{STALL_LIMIT} tokens without progress"
+                )
+
+    if state is not None and state.current_state != "DONE":
+        raise RuntimeError(
+            f"Generation did not complete within {max_steps} steps "
+            f"(stuck in state={state.current_state})"
+        )
 
     if selected_function_name is None:
         raise RuntimeError("Model failed to select a valid function name")
@@ -225,7 +247,7 @@ def filter_tokens(
                     if not is_valid:
                         wrong_ids.add(tid)
                 elif expected_type == "null":
-                    value =  state.buffer.strip()
+                    value = state.buffer.strip()
                     potential_str = value + ttxt
 
                     if not "null".startswith(potential_str):

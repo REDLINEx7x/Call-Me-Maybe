@@ -68,13 +68,10 @@ def main() -> None:
             continue
 
         try:
-            # Generate constrained JSON
-            # (returns {"name": "...", "parameters": {...}})
             result = generate_constrained_json(
                 text_prompt, model, vocab, schema_dict, valid_function_names
             )
 
-            # Format output with original prompt
             output_item = {
                 "prompt": text_prompt,
                 "name": result.get("name", ""),
@@ -91,7 +88,6 @@ def main() -> None:
     output_path = Path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Write results
     try:
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(all_answers, f, indent=4, ensure_ascii=False)
