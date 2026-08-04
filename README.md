@@ -79,14 +79,20 @@ the partial string exactly matches a real function name.
 (`JSONStateMachine`) tracks the current position in the JSON grammar
 (`START → EXPECT_KEY → EXPECT_COLON → EXPECT_VALUE → EXPECT_KEY/DONE`) and, at
 each state, only tokens consistent with that position — and, for values, with the
-parameter's declared type (`string`, `number`, `boolean`) — remain unmasked.
+parameter's declared type (`string`, `number`, `boolean`, `null`) — remain unmasked.
 Required-key completeness is enforced before the closing brace is ever allowed,
 and duplicate keys are rejected.
 
-Two structural safety nets exist on top of this: any token id absent from the
-loaded vocabulary (e.g. special/control tokens) is masked unconditionally, and if
+**Zero-parameter functions** are handled as a special case: if a selected function
+declares no parameters, the `PARAMETER_GENERATION` phase is skipped entirely and
+the state machine transitions directly to `DONE`, since entering `EXPECT_KEY` with
+an empty key set would mask every token and crash.
+
+Three structural safety nets exist on top of this: any token id absent from the
+loaded vocabulary (e.g. special/control tokens) is masked unconditionally; if
 every token is ever masked at once, generation raises immediately with the exact
-state and buffer content, rather than looping or silently producing wrong output.
+state and buffer content; and a stall detector raises if the state machine remains
+in the same state for more than 50 consecutive tokens without progress.
 
 ## Design Decisions
 
@@ -109,25 +115,24 @@ state and buffer content, rather than looping or silently producing wrong output
   into the same token transition directly to `EXPECT_KEY`/`DONE` rather than
   deferring to a separate `EXPECT_SEPARATOR` state — deferring caused a stale,
   already-consumed delimiter to corrupt the next transition (see Challenges Faced).
-- **Prompt includes function context and a dynamic example.** Constrained
+- **Prompt includes function context and two worked examples.** Constrained
   decoding only guarantees valid *structure*; it has no influence over which
   function or values the model *intends* to pick. The prompt sent to the model
-  explicitly lists available functions and includes a one-shot example built
-  dynamically from the current schema (never a hardcoded function name), since
-  test function sets may change between runs.
+  explicitly lists available functions and includes two fixed examples: one
+  demonstrating direct value extraction (e.g. a name from a greeting request),
+  and one demonstrating pattern synthesis (e.g. a regex that matches a whole
+  category rather than copying a literal substring from the input).
 
 ## Performance Analysis
 
 - **Validity**: 100% of generated outputs are valid, schema-compliant JSON — this
   is a structural guarantee of the masking approach, not a statistical outcome.
 - **Accuracy**: across an 11-prompt test set, function selection and argument
-  extraction were correct in the large majority of cases. The main source of
-  error is not structural but semantic: the 500M-parameter model sometimes
-  extracts a concrete detail from the prompt (e.g. copying one literal number as
-  a "regex") rather than reasoning abstractly about the general pattern the task
-  requires. This reflects the model's own capability ceiling rather than a defect
-  in the constrained decoding mechanism, which cannot enforce semantic correctness
-  by design.
+  extraction were correct in the large majority of cases. The main remaining
+  source of error is semantic: the 500M-parameter model can reason poorly about
+  abstract patterns (e.g. regex synthesis). This reflects the model's capability
+  ceiling, not a defect in the constrained decoding mechanism, which cannot
+  enforce semantic correctness by design.
 - **Speed**: the full test set completes well within the required 5-minute budget.
 
 ## Challenges Faced
@@ -205,11 +210,32 @@ Sample output (`function_calling_results.json`):
 
 ## Resources
 
-- [Anthropic / Hugging Face documentation on BPE tokenization](https://huggingface.co/docs/transformers/tokenizer_summary) —
-  background on why tokens don't align with characters, relevant to building the
-  vocabulary lookup and token-level constraint checks.
-- [llama.cpp GBNF grammar documentation](https://github.com/ggerganov/llama.cpp/blob/master/grammars/README.md) —
-  conceptual reference for grammar-constrained token sampling via logit masking.
-- [Pydantic v2 documentation](https://docs.pydantic.dev/latest/) — used for all
-  schema and input-file validation models.
+- [Hugging Face — Tokenizer Summary](https://huggingface.co/docs/transformers/tokenizer_summary) —
+  background on subword tokenization (BPE/SentencePiece) and why tokens don't
+  align with characters; directly relevant to building the vocabulary lookup
+  in `load_vocab` and the token-level prefix/mask checks in `filter_tokens`.
+
+- [Bycroft — LLM Visualization](https://bbycroft.net/llm) —
+  interactive 3D walkthrough of a GPT-style transformer's internals
+  (embeddings, attention heads, MLP layers, logits), useful for grounding
+  the generation pipeline (`get_logits_from_input_ids`) in the actual
+  architecture producing those logits.
+
+- (https://youtu.be/U2hZFMVNSE0) —
+
+- (https://youtu.be/zduSFxRajkE) —
+
+- (https://youtu.be/wjZofJX0v4M) —
+
+### AI Usage
+
+## AI Usage
+
+AI was used throughout this project as a debugging and conceptual-explanation
+partner, Its main uses were: walking through the constrained
+decoding and JSON state machine logic before implementation, diagnosing bugs from pasted
+error output and code (e.g. the empty-mask crash on zero-parameter functions, the
+premature object closure, the generation-stall issue), and reviewing/critiquing draft
+code changes I wrote myself. All final implementation decisions and code were written and
+understood by me; AI was not used to generate the solution wholesale.
 
