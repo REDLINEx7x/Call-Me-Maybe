@@ -46,8 +46,6 @@ def generate_constrained_json(
     steps_in_current_state = 0
     last_state = None
     for _ in range(max_steps):
-
-
         ids_logits = model.get_logits_from_input_ids(input_ids)
         filtered_logits = filter_tokens(
             ids_logits, state, vocab, phase, current_buffer, valid_names
@@ -71,14 +69,9 @@ def generate_constrained_json(
                 current_buffer = ""
 
                 if not state.expected_keys:
-                    # Zero-parameter function: skip PARAMETER_GENERATION
-                    # entirely — there is no valid key for EXPECT_KEY to
-                    # offer, so entering that state would mask every
-                    # token and crash.
                     state.parsed_data = {}
                     state.current_state = "DONE"
                     break
-
                 phase = "PARAMETER_GENERATION"
 
         elif phase == "PARAMETER_GENERATION" and state is not None:
@@ -88,15 +81,13 @@ def generate_constrained_json(
                 raise RuntimeError(f"State machine error: {e}") from e
             if state.current_state == "DONE":
                 break
-
-
         if phase == "PARAMETER_GENERATION" and state is not None:
             if state.current_state == last_state:
                 steps_in_current_state += 1
             else:
                 steps_in_current_state = 0
                 last_state = state.current_state
-            if steps_in_current_state > STALL_LIMIT:  # e.g. 40
+            if steps_in_current_state > STALL_LIMIT:
                 raise RuntimeError(
                     f"Stalled in state={state.current_state} for "
                     f"{STALL_LIMIT} tokens without progress"
@@ -148,12 +139,10 @@ def filter_tokens(
         for token_id, token_txt in vocab.items():
             tid = int(token_id)
             ttxt = str(token_txt)
-            if not ttxt:  # empty token can never make progress
+            if not ttxt:
                 wrong_ids.add(tid)
                 continue
             potential_str = current_buffer + ttxt
-            # Check if this potential string is a prefix of any
-            # valid function name
             is_valid = any(
                 target.startswith(potential_str) for target in valid_names
             )
@@ -239,7 +228,6 @@ def filter_tokens(
                 elif expected_type == "boolean":
                     value_so_far = state.buffer.strip()
                     potential_str = value_so_far + ttxt
-                    # FIXED: real prefix matching, not character-set membership
                     is_valid = any(
                         c.startswith(potential_str)
                         for c in ["true", "false"]

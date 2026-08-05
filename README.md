@@ -227,7 +227,9 @@ Sample output (`function_calling_results.json`):
 
 - (https://youtu.be/wjZofJX0v4M) —
 
-### AI Usage
+- (https://jalammar.github.io/illustrated-gpt2/) —
+  The Illustrated GPT-2 (Visualizing Transformer Language Models)
+
 
 ## AI Usage
 

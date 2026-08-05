@@ -160,7 +160,7 @@ class JSONStateMachine(BaseModel):
                     if found_char == ",":
                         self.current_key = ""
                         self.current_state = (
-                            "EXPECT_KEY"  # FIXED: skip EXPECT_SEPARATOR
+                            "EXPECT_KEY"
                         )
                     else:
                         missing_keys = (
@@ -170,7 +170,7 @@ class JSONStateMachine(BaseModel):
                             raise ValueError(
                                 f"Missing required keys: {missing_keys}"
                             )
-                        self.current_state = (  # FIXED: skip EXPECT_SEPARATOR
+                        self.current_state = (
                             "DONE"
                         )
                     return
@@ -202,7 +202,6 @@ class JSONStateMachine(BaseModel):
         Returns:
             An instance of JSONStateMachine configured for the schema.
         """
-        # Katjib les arguments w types dyalhom men 'parameters' dyal l'json
         parameters = schema_dict.get("parameters", {})
         expected_keys = list(parameters.keys())
         required_types = {}
