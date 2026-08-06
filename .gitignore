@@ -10,5 +10,4 @@ venv/
 .vscode/
 .DS_Store
 
-# Output directory
 data/output/
