@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import List, Dict, Any
 from pydantic import ValidationError
 from .models import PromptModel, FunctionDefinition
-from llm_sdk.llm_sdk import Small_LLM_Model
+from llm_sdk import Small_LLM_Model
 
 
 def load_prompts(file_path: str) -> List[Dict[str, Any]]:

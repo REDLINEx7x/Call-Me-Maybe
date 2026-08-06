@@ -2,7 +2,7 @@
 
 import numpy as np
 from .models import JSONStateMachine
-from llm_sdk.llm_sdk import Small_LLM_Model
+from llm_sdk import Small_LLM_Model
 from typing import Dict, List, Any
 from .utils import build_prompt
 

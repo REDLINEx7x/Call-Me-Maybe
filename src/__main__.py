@@ -4,7 +4,7 @@ from .utils import (
     load_prompts,
     load_vocab,
 )
-from llm_sdk.llm_sdk import Small_LLM_Model
+from llm_sdk import Small_LLM_Model
 from .decoder import generate_constrained_json
 import json
 from pathlib import Path
