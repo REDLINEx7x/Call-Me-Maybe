@@ -6,13 +6,22 @@ requires-python = ">=3.10"
 dependencies = [
     "pydantic>=2.0",
     "numpy>=1.26",
-    "flake8>=7.3.0",
-    "mypy>=1.19.1",
     "llm-sdk",
 ]
+
+[dependency-groups]
+dev = ["flake8>=7.3.0", "mypy>=1.19.1"]
 
 [tool.uv.sources]
 llm-sdk = { workspace = true }
 
 [tool.uv.workspace]
 members = ["llm_sdk"]
+
+[tool.mypy]
+exclude = ['(?i)^\.venv/', '(?i)^llm_sdk/']
+
+[[tool.mypy.overrides]]
+module = ["llm_sdk", "llm_sdk.*"]
+follow_imports = "skip"
+ignore_missing_imports = true

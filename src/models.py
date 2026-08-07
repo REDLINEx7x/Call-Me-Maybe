@@ -129,7 +129,11 @@ class JSONStateMachine(BaseModel):
                     ):
                         end_i, found_char = comma_i, ","
                     else:
-                        assert brace_i is not None
+                        if brace_i is None:
+                            raise ValueError(
+                                "Expected closing brace "
+                                "but none found in buffer"
+                            )
                         end_i, found_char = brace_i, "}"
 
                     raw_val = self.buffer[:end_i].strip()

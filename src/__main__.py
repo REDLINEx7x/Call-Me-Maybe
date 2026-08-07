@@ -54,10 +54,9 @@ def main() -> None:
         print("Error: No valid prompts or functions loaded.")
         return
 
-    valid_function_names = [func.get("name") for func in validated_functions]
-    schema_dict = {func.get("name"): func for func in validated_functions}
+    valid_function_names = [func["name"] for func in validated_functions]
+    schema_dict = {func["name"]: func for func in validated_functions}
 
-    # Process each prompt
     for idx, prompt in enumerate(validated_prompts, 1):
         print(
             f"[{idx}/{len(validated_prompts)}] processing: "
